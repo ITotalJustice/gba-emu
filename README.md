@@ -1,6 +1,6 @@
 # gba-emu
 
-starting to write a gba emulator in c11 (maybe c99, not sure yet).
+starting to write a gba emulator in c++14 (maybe c11, not sure yet).
 
 ----
 
