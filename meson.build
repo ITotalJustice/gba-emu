@@ -11,6 +11,7 @@ dependencies = [
 source = files([
     'src/main.cc',
     'src/arm7tdmi/thumb.cc',
+    'src/arm7tdmi/arm.cc',
 ])
 
 includes = include_directories([
@@ -28,9 +29,9 @@ cflags = [
     '-Wextra',
     # '-Wno-format',
 ]
-
+# 0b0000'0000'0000'0000'0000'0000
 cppflags = [
-    '-std=c++14',
+    '-std=c++20',
     # not sure about this because the codebase will still be c-style
     '-Wuseless-cast',
     # not going to use classes..., but just in case i do i'll leave this here

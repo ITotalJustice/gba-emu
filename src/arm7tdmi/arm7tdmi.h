@@ -114,25 +114,5 @@ typedef struct arm7tdmi {
     uint32_t status_registers[6];
 } arm7tdmi_t;
 
-void arm7tdmi_instr_bx(arm7tdmi_t* arm, uint32_t op);
-
-// Data Processing
-// operand1, operand2, dst_reg_index, set cond flags for cpsr
-void arm7tdmi_instr_and(arm7tdmi_t* arm, uint32_t op1, uint32_t op2, uint8_t dst, uint8_t s);
-void arm7tdmi_instr_eor(arm7tdmi_t* arm, uint32_t op1, uint32_t op2, uint8_t dst, uint8_t s);
-void arm7tdmi_instr_sub(arm7tdmi_t* arm, uint32_t op1, uint32_t op2, uint8_t dst, uint8_t s);
-void arm7tdmi_instr_rsb(arm7tdmi_t* arm, uint32_t op1, uint32_t op2, uint8_t dst, uint8_t s);
-void arm7tdmi_instr_add(arm7tdmi_t* arm, uint32_t op1, uint32_t op2, uint8_t dst, uint8_t s);
-void arm7tdmi_instr_adc(arm7tdmi_t* arm, uint32_t op1, uint32_t op2, uint8_t dst, uint8_t s);
-void arm7tdmi_instr_sbc(arm7tdmi_t* arm, uint32_t op1, uint32_t op2, uint8_t dst, uint8_t s);
-void arm7tdmi_instr_rsc(arm7tdmi_t* arm, uint32_t op1, uint32_t op2, uint8_t dst, uint8_t s);
-void arm7tdmi_instr_tst(arm7tdmi_t* arm, uint32_t op1, uint32_t op2, uint8_t dst, uint8_t s);
-void arm7tdmi_instr_teq(arm7tdmi_t* arm, uint32_t op1, uint32_t op2, uint8_t dst, uint8_t s);
-void arm7tdmi_instr_cmp(arm7tdmi_t* arm, uint32_t op1, uint32_t op2, uint8_t dst, uint8_t s);
-void arm7tdmi_instr_cmn(arm7tdmi_t* arm, uint32_t op1, uint32_t op2, uint8_t dst, uint8_t s);
-void arm7tdmi_instr_orr(arm7tdmi_t* arm, uint32_t op1, uint32_t op2, uint8_t dst, uint8_t s);
-void arm7tdmi_instr_mov(arm7tdmi_t* arm, uint32_t op1, uint32_t op2, uint8_t dst, uint8_t s);
-void arm7tdmi_instr_bic(arm7tdmi_t* arm, uint32_t op1, uint32_t op2, uint8_t dst, uint8_t s);
-void arm7tdmi_instr_mvn(arm7tdmi_t* arm, uint32_t op1, uint32_t op2, uint8_t dst, uint8_t s);
-
+void arm_decode_test(uint32_t op);
 void thumb_decode_test(uint16_t op);

@@ -53,3 +53,7 @@ dkms.conf
 
 # my ignores
 build/
+.vscode/
+src/arm7tdmi/arm_old.c
+extra/gen_arm_data_process_table/test.h
+extra/gen_arm_data_process_table/test_lut.hpp
