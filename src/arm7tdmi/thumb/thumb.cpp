@@ -1,13 +1,11 @@
-// found out c++14 allows for binary literals as well as
-// using '' to space out numbers.
-// will start using c++ compiler for this now, but still will
-// be written in a strictly 'C' way.
-#include "arm7tdmi.h"
-#include "bit.hpp"
+#include "../arm7tdmi.hpp"
+#include "../bit.hpp"
 
 #include <stdio.h>
 #include <assert.h>
 #include <bit>
+
+namespace arm7tdmi {
 
 // this masks the lower 28-bits and then sets the cond flags
 // which are the upper 4-bits (31-28).
@@ -60,12 +58,12 @@ __builtin_smul_overflow
 // branch or by trying to not branch at all.
 
 // template<bool update_flag = 1>
-// uint32_t arm7tdmi_ror(arm7tdmi_t* arm, const uint32_t val, const uint32_t shift) {
+// u32 arm7tdmi_ror(arm7tdmi_t* arm, const u32 val, const u32 shift) {
 //     return bit::rotr(val, shift);
 // }
 
-void thumb_and(arm7tdmi_t* arm, const uint8_t rs, const uint8_t rd) {
-    const uint32_t result = arm->registers[rd] & arm->registers[rs];
+void thumb_and(arm7tdmi_t* arm, const u8 rs, const u8 rd) {
+    const u32 result = arm->registers[rd] & arm->registers[rs];
     SET_COND_FLAGS_NZ(
         /* N */ GET_BIT(result, 31),
         /* Z */ result == 0
@@ -73,8 +71,8 @@ void thumb_and(arm7tdmi_t* arm, const uint8_t rs, const uint8_t rd) {
     arm->registers[rd] = result;
 }
 
-void thumb_eor(arm7tdmi_t* arm, const uint8_t rs, const uint8_t rd) {
-    const uint32_t result = arm->registers[rd] ^ arm->registers[rs];
+void thumb_eor(arm7tdmi_t* arm, const u8 rs, const u8 rd) {
+    const u32 result = arm->registers[rd] ^ arm->registers[rs];
     SET_COND_FLAGS_NZ(
         /* N */ GET_BIT(result, 31),
         /* Z */ result == 0
@@ -82,8 +80,8 @@ void thumb_eor(arm7tdmi_t* arm, const uint8_t rs, const uint8_t rd) {
     arm->registers[rd] = result;
 }
 
-void thumb_lsl(arm7tdmi_t* arm, const uint8_t rs, const uint8_t rd) {
-    const uint32_t result = arm->registers[rd] << (arm->registers[rs] & 0xFF);
+void thumb_lsl(arm7tdmi_t* arm, const u8 rs, const u8 rd) {
+    const u32 result = arm->registers[rd] << (arm->registers[rs] & 0xFF);
 
     const bool carry = [&]() -> bool {
         switch (arm->registers[rs] & 0xFF) {
@@ -106,8 +104,8 @@ void thumb_lsl(arm7tdmi_t* arm, const uint8_t rs, const uint8_t rd) {
     arm->registers[rd] = result;
 }
 
-void thumb_lsr(arm7tdmi_t* arm, const uint8_t rs, const uint8_t rd) {
-    const uint32_t result = arm->registers[rd] >> rs;
+void thumb_lsr(arm7tdmi_t* arm, const u8 rs, const u8 rd) {
+    const u32 result = arm->registers[rd] >> rs;
 
     const bool carry = [&]() -> bool {
         switch (arm->registers[rs] & 0xFF) {
@@ -130,7 +128,7 @@ void thumb_lsr(arm7tdmi_t* arm, const uint8_t rs, const uint8_t rd) {
     arm->registers[rd] = result;
 }
 
-void thumb_asr(arm7tdmi_t* arm, const uint8_t rs, const uint8_t rd) {
+void thumb_asr(arm7tdmi_t* arm, const u8 rs, const u8 rd) {
     switch (arm->registers[rs]) {
         case 0:
         case 1 ... 31:
@@ -139,8 +137,8 @@ void thumb_asr(arm7tdmi_t* arm, const uint8_t rs, const uint8_t rd) {
     };
 
     // i think if i cast reg[rd] to signed, this will be an asr
-    const uint32_t result = static_cast<uint32_t>(static_cast<int32_t>(arm->registers[rd]) >> arm->registers[rs]);
-    // const uint32_t result = (arm->registers[rd] >> arm->registers[rs]) | (arm->registers[rd] & 0x80000000);
+    const u32 result = static_cast<u32>(static_cast<int32_t>(arm->registers[rd]) >> arm->registers[rs]);
+    // const u32 result = (arm->registers[rd] >> arm->registers[rs]) | (arm->registers[rd] & 0x80000000);
     
     const bool carry = [&]() -> bool {
         switch (arm->registers[rs] & 0xFF) {
@@ -161,8 +159,8 @@ void thumb_asr(arm7tdmi_t* arm, const uint8_t rs, const uint8_t rd) {
     arm->registers[rd] = result;    
 }
 
-void thumb_adc(arm7tdmi_t* arm, const uint8_t rs, const uint8_t rd) {
-    const uint32_t result = arm->registers[rd] + arm->registers[rs] + GET_CARRY();
+void thumb_adc(arm7tdmi_t* arm, const u8 rs, const u8 rd) {
+    const u32 result = arm->registers[rd] + arm->registers[rs] + GET_CARRY();
     SET_COND_FLAGS_NZCV(
         /* N */ GET_BIT(result, 31),
         /* Z */ result == 0,
@@ -172,8 +170,8 @@ void thumb_adc(arm7tdmi_t* arm, const uint8_t rs, const uint8_t rd) {
     arm->registers[rd] = result;
 }
 
-void thumb_sbc(arm7tdmi_t* arm, const uint8_t rs, const uint8_t rd) {
-    const uint32_t result = arm->registers[rd] - (arm->registers[rs] + GET_CARRY());
+void thumb_sbc(arm7tdmi_t* arm, const u8 rs, const u8 rd) {
+    const u32 result = arm->registers[rd] - (arm->registers[rs] + GET_CARRY());
     SET_COND_FLAGS_NZCV(
         /* N */ GET_BIT(result, 31),
         /* Z */ result == 0,
@@ -183,8 +181,8 @@ void thumb_sbc(arm7tdmi_t* arm, const uint8_t rs, const uint8_t rd) {
     arm->registers[rd] = result;
 }
 
-void thumb_ror(arm7tdmi_t* arm, const uint8_t rs, const uint8_t rd) {
-    const uint32_t result = bit::rotr(arm->registers[rd], arm->registers[rs]);
+void thumb_ror(arm7tdmi_t* arm, const u8 rs, const u8 rd) {
+    const u32 result = bit::rotr(arm->registers[rd], arm->registers[rs]);
     
     const bool carry = [&]() -> bool {
         switch (arm->registers[rs] & 0xFF) {
@@ -207,7 +205,7 @@ void thumb_ror(arm7tdmi_t* arm, const uint8_t rs, const uint8_t rd) {
     arm->registers[rd] = result;
 }
 
-void thumb_tst(arm7tdmi_t* arm, const uint8_t rs, const uint8_t rd) {    
+void thumb_tst(arm7tdmi_t* arm, const u8 rs, const u8 rd) {    
     arm->registers[rd] = arm->registers[rd] & arm->registers[rs];
     SET_COND_FLAGS_NZ(
         /* N */ GET_BIT(arm->registers[rd], 31),
@@ -215,8 +213,8 @@ void thumb_tst(arm7tdmi_t* arm, const uint8_t rs, const uint8_t rd) {
     );
 }
 
-void thumb_neg(arm7tdmi_t* arm, const uint8_t rs, const uint8_t rd) {
-    const uint32_t result = 0 - arm->registers[rs];
+void thumb_neg(arm7tdmi_t* arm, const u8 rs, const u8 rd) {
+    const u32 result = 0 - arm->registers[rs];
     SET_COND_FLAGS_NZCV(
         /* N */ GET_BIT(result, 31),
         /* Z */ result == 0,
@@ -226,8 +224,8 @@ void thumb_neg(arm7tdmi_t* arm, const uint8_t rs, const uint8_t rd) {
     arm->registers[rd] = result;
 }
 
-void thumb_cmp(arm7tdmi_t* arm, const uint8_t rs, const uint8_t rd) {
-    const uint32_t result = arm->registers[rd] - arm->registers[rs];
+void thumb_cmp(arm7tdmi_t* arm, const u8 rs, const u8 rd) {
+    const u32 result = arm->registers[rd] - arm->registers[rs];
     SET_COND_FLAGS_NZCV(
         /* N */ GET_BIT(result, 31),
         /* Z */ result == 0,
@@ -236,8 +234,8 @@ void thumb_cmp(arm7tdmi_t* arm, const uint8_t rs, const uint8_t rd) {
     );
 }
 
-void thumb_cmn(arm7tdmi_t* arm, const uint8_t rs, const uint8_t rd) {
-    const uint32_t result = arm->registers[rd] + arm->registers[rs];
+void thumb_cmn(arm7tdmi_t* arm, const u8 rs, const u8 rd) {
+    const u32 result = arm->registers[rd] + arm->registers[rs];
     SET_COND_FLAGS_NZCV(
         /* N */ GET_BIT(result, 31),
         /* Z */ result == 0,
@@ -246,7 +244,7 @@ void thumb_cmn(arm7tdmi_t* arm, const uint8_t rs, const uint8_t rd) {
     );
 }
 
-void thumb_orr(arm7tdmi_t* arm, const uint8_t rs, const uint8_t rd) {
+void thumb_orr(arm7tdmi_t* arm, const u8 rs, const u8 rd) {
     arm->registers[rd] = arm->registers[rd] | arm->registers[rs];
     SET_COND_FLAGS_NZ(
         /* N */ GET_BIT(arm->registers[rd], 31),
@@ -254,8 +252,8 @@ void thumb_orr(arm7tdmi_t* arm, const uint8_t rs, const uint8_t rd) {
     );
 }
 
-void thumb_mul(arm7tdmi_t* arm, const uint8_t rs, const uint8_t rd) {
-    const uint32_t result = arm->registers[rd] * arm->registers[rs];
+void thumb_mul(arm7tdmi_t* arm, const u8 rs, const u8 rd) {
+    const u32 result = arm->registers[rd] * arm->registers[rs];
     SET_COND_FLAGS_NZCV(
         /* N */ GET_BIT(result, 31),
         /* Z */ result == 0,
@@ -268,7 +266,7 @@ void thumb_mul(arm7tdmi_t* arm, const uint8_t rs, const uint8_t rd) {
 // data sheet says rd AND NOT Rs
 // not sure if it means making Rs either 1-0,
 // or complement it with ~
-void thumb_bic(arm7tdmi_t* arm, const uint8_t rs, const uint8_t rd) {
+void thumb_bic(arm7tdmi_t* arm, const u8 rs, const u8 rd) {
     arm->registers[rd] = arm->registers[rd] & (~arm->registers[rs]);
     SET_COND_FLAGS_NZ(
         /* N */ GET_BIT(arm->registers[rd], 31),
@@ -277,7 +275,7 @@ void thumb_bic(arm7tdmi_t* arm, const uint8_t rs, const uint8_t rd) {
 }
 
 // same as above comments but no AND, just NOT
-void thumb_mvn(arm7tdmi_t* arm, const uint8_t rs, const uint8_t rd) {
+void thumb_mvn(arm7tdmi_t* arm, const u8 rs, const u8 rd) {
     arm->registers[rd] = ~arm->registers[rs];
     SET_COND_FLAGS_NZ(
         /* N */ GET_BIT(arm->registers[rd], 31),
@@ -285,7 +283,7 @@ void thumb_mvn(arm7tdmi_t* arm, const uint8_t rs, const uint8_t rd) {
     );
 }
 
-void thumb_decode_test(uint16_t op) {
+void thumb_decode_test(u16 op) {
 
     // 16-bit binary literal template
     // 0b0000'0000'0000'0000
@@ -735,3 +733,5 @@ void thumb_decode_test(uint16_t op) {
             break;
     }
 }
+
+} // namespace arm7tdmi

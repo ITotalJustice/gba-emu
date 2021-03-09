@@ -1,11 +1,14 @@
-#include "arm7tdmi/arm7tdmi.h"
+#include "arm7tdmi/arm7tdmi.hpp"
 
 #include <stdio.h>
 #include <assert.h>
 #include <array>
 #include "arm7tdmi/bit.hpp"
+
+#ifdef TEST_DECODING
 #include "extra/gen_arm_data_process_table/test.h"
 #include "extra/gen_arm_data_process_table/test_lut.hpp"
+#endif
 
 void format01_test() {
     
@@ -28,7 +31,7 @@ void format01_test() {
     };
 
     for (auto op : array) {
-        thumb_decode_test(op);
+        arm7tdmi::thumb_decode_test(op);
     }
 }
 
@@ -46,7 +49,7 @@ void format02_test() {
     };
 
     for (auto op : array) {
-        thumb_decode_test(op);
+        arm7tdmi::thumb_decode_test(op);
     }
 }
 
@@ -72,7 +75,7 @@ void format03_test() {
     };
 
     for (auto op : array) {
-        thumb_decode_test(op);
+        arm7tdmi::thumb_decode_test(op);
     }
 }
 
@@ -146,7 +149,7 @@ void format04_test() {
     };
 
     for (auto op : array) {
-        thumb_decode_test(op);
+        arm7tdmi::thumb_decode_test(op);
     }
 }
 
@@ -164,10 +167,14 @@ int main() {
     // uint32_t opcode = 0b0000'1111'1111'0000'0000'0000'1111'0000;
     // uint32_t result = ((opcode >> 16) & 0xFF0) | ((opcode >> 4) & 0xF);
     uint32_t op = 0b0000'001'1000'0'00000000000000000000;
-    0x300;
     // std::cout << "0b" << std::bitset<32>(op) << '\n';
     // std::cout <<"0b" << std::bitset<12>((((op >> 16) & 0xFF0) | ((op >> 4) & 0xF)) & 0xFFF) << '\n';
     printf("0x%03X\n", (((op >> 16) & 0xFF0) | ((op >> 4) & 0xF)) & 0xFFF);
+
+    const uint32_t op2 = 0b1000'0000'0000'0000'0000'0000'0000'0000;
+
+    const uint32_t result = static_cast<uint32_t>(static_cast<int>(op2) >> 4);
+    std::cout << "0b" << std::bitset<32>(result) << '\n';
 
     // for (uint32_t i = 0; i < UINT32_MAX; ++i) {
     //     if (test(i) != 0) {
@@ -181,6 +188,7 @@ int main() {
     //         }
     //     }
     // }
+#ifdef TEST_DECODING
     for (uint32_t i = 0; i < 0x1000; ++i) {
         if (test(i) != 0) {
             const auto [num, str] = DILLION[i];
@@ -191,6 +199,7 @@ int main() {
             }
         }
     }
+#endif // TEST_DECODING
     printf("done\n");
     // test(0xA0);
     // std::cout << std::bitset<8>(0x8f) << '\n';
@@ -198,7 +207,7 @@ int main() {
     // format02_test();
     // format03_test();
     // format04_test();
-    // thumb_decode_test(0x40A9);
+    // arm7tdmi::thumb_decode_test(0x40A9);
     // arm_decode_test(0xE0214392);
 
     // format05_test();

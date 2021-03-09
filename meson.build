@@ -9,9 +9,14 @@ dependencies = [
 ]
 
 source = files([
-    'src/main.cc',
-    'src/arm7tdmi/thumb.cc',
-    'src/arm7tdmi/arm.cc',
+    'src/main.cpp',
+    'src/arm7tdmi/thumb/thumb.cpp',
+    'src/arm7tdmi/arm/arm.cpp',
+    #'src/arm7tdmi/arm/data_processing.cpp',
+    # tests
+    'src/arm7tdmi/tests/test_barrel_shifter.cpp',
+    'src/arm7tdmi/tests/test_arm_data_processing.cpp',
+    'src/arm7tdmi/tests/test_common.cpp',
 ])
 
 includes = include_directories([
@@ -31,12 +36,13 @@ cflags = [
 ]
 # 0b0000'0000'0000'0000'0000'0000
 cppflags = [
-    '-std=c++20',
+    '-std=gnu++20',
+    # '-std=gnu++2b',
     # not sure about this because the codebase will still be c-style
     '-Wuseless-cast',
     # not going to use classes..., but just in case i do i'll leave this here
-    # '-fdevirtualize-at-ltrans',
-    # '-Wsuggest-final-types',
+    '-fdevirtualize-at-ltrans',
+    '-Wsuggest-final-types',
 ]
 
 linkflags = [

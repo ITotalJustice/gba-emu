@@ -1,7 +1,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
-int test(uint32_t op) {
+int arm_test_decode(uint32_t op) {
 	switch ((((op >> 16) & 0xFF0) | ((op >> 4) & 0xF)) & 0xFFF) {
 
 // 4.3
