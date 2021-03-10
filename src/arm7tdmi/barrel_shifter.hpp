@@ -1,7 +1,7 @@
 #pragma once
 
 #include "arm7tdmi.hpp"
-#include "bit.hpp"
+#include "../bit.hpp"
 
 #include <cstdint>
 // #include <bit>

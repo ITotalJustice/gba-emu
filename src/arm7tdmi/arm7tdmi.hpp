@@ -1,6 +1,6 @@
 #pragma once
 
-#include "bit.hpp"
+#include "../bit.hpp"
 
 #include <cstdint>
 #include <array>
@@ -181,19 +181,29 @@ constexpr bool is_flag_set(const u32 cpsr) {
     }
 }
 
+constexpr auto FLAG_N_MASK = 0b0111'1111'1111'1111'1111'1111'1111'1111;
+constexpr auto FLAG_Z_MASK = 0b1011'1111'1111'1111'1111'1111'1111'1111;
+constexpr auto FLAG_C_MASK = 0b1101'1111'1111'1111'1111'1111'1111'1111;
+constexpr auto FLAG_V_MASK = 0b1110'1111'1111'1111'1111'1111'1111'1111;
+
+constexpr auto FLAG_N_BIT = 31;
+constexpr auto FLAG_Z_BIT = 30;
+constexpr auto FLAG_C_BIT = 29;
+constexpr auto FLAG_V_BIT = 28;
+
 template <flags flag>
 constexpr u32 set_flag(const u32 cpsr, const bool value) {
     if constexpr (flag == flags::N) {
-        return (cpsr & 0b0111'1111'1111'1111'1111'1111'1111'1111) | (value << 31);
+        return bit::set<FLAG_N_BIT>(cpsr, value);
     }
     if constexpr (flag == flags::Z) {
-        return (cpsr & 0b1011'1111'1111'1111'1111'1111'1111'1111) | (value << 30);
+        return bit::set<FLAG_Z_BIT>(cpsr, value);
     }
     if constexpr (flag == flags::C) {
-        return (cpsr & 0b1101'1111'1111'1111'1111'1111'1111'1111) | (value << 29);
+        return bit::set<FLAG_C_BIT>(cpsr, value);
     }
     if constexpr (flag == flags::V) {
-        return (cpsr & 0b1110'1111'1111'1111'1111'1111'1111'1111) | (value << 28);
+        return bit::set<FLAG_V_BIT>(cpsr, value);
     }
 }
 

@@ -1,9 +1,11 @@
 #include "arm7tdmi/arm7tdmi.hpp"
+#include "mem/memory_map.hpp"
+#include "mem/io_types.hpp"
 
 #include <stdio.h>
 #include <assert.h>
 #include <array>
-#include "arm7tdmi/bit.hpp"
+#include "bit.hpp"
 
 #ifdef TEST_DECODING
 #include "extra/gen_arm_data_process_table/test.h"

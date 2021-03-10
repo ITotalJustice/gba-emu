@@ -1,5 +1,5 @@
 #include "../arm7tdmi.hpp"
-#include "../bit.hpp"
+#include "../../bit.hpp"
 
 #include <stdio.h>
 #include <assert.h>
