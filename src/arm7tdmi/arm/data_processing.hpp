@@ -23,12 +23,12 @@ constexpr arm_bx_result arm_bx(const u32 cpsr, const u32 rn) {
 }
 
 // returns new PC
-void arm_bx(arm7tdmi_t* arm, const u8 rn) {
+void arm_bx(arm7tdmi& arm, const u8 rn) {
     assert(rn != 15 && "R15 is UB!");
 
-    const auto [new_pc, new_cpsr] = arm_bx(arm->registers[16], arm->registers[rn]);
-    arm->registers[15] = new_pc;
-    arm->registers[16] = new_cpsr;
+    const auto [new_pc, new_cpsr] = arm_bx(arm.registers[16], arm.registers[rn]);
+    arm.registers[15] = new_pc;
+    arm.registers[16] = new_cpsr;
 }
 
 constexpr s32 branch_offset(const u32 offset) {
@@ -49,14 +49,14 @@ constexpr auto arm_bl(const u32 pc, const s32 offset) -> arm_bl_result {
     };
 }
 
-void arm_b(arm7tdmi_t* arm, const s32 offset) {
-    arm->registers[15] = arm_b(arm->registers[15], offset);
+void arm_b(arm7tdmi& arm, const s32 offset) {
+    arm.registers[15] = arm_b(arm.registers[15], offset);
 }
 
-void arm_bl(arm7tdmi_t* arm, const s32 offset) {
-    const auto [new_pc, new_link] = arm_bl(arm->registers[15], offset);
-    arm->registers[14] = new_link;
-    arm->registers[15] = new_pc;
+void arm_bl(arm7tdmi& arm, const s32 offset) {
+    const auto [new_pc, new_link] = arm_bl(arm.registers[15], offset);
+    arm.registers[14] = new_link;
+    arm.registers[15] = new_pc;
 }
 
 struct Test { u32 result, cpsr; };
@@ -181,80 +181,80 @@ constexpr Test arm_mvn(const u32 cpsr, const u32 op1, const u32 op2, const bool 
 
 // bitwise and
 template <flags_cond flag>
-void arm_and(arm7tdmi_t* arm, const u32 op1, const u32 op2, const u8 rd) {
+void arm_and(arm7tdmi& arm, const u32 op1, const u32 op2, const u8 rd) {
     const auto [result, cpsr] = arm_and2<flag>(
-        arm->registers[16], op1, op2, arm->barrel_carry
+        arm.registers[16], op1, op2, arm.barrel_carry
     );
-    arm->registers[rd] = result;
-    arm->registers[16] = cpsr;
+    arm.registers[rd] = result;
+    arm.registers[16] = cpsr;
 }
 
 // bitwise exclusive or
 template <flags_cond flag>
-void arm_eor(arm7tdmi_t* arm, const u32 op1, const u32 op2, const u8 rd) {
+void arm_eor(arm7tdmi& arm, const u32 op1, const u32 op2, const u8 rd) {
     const auto [result, cpsr] = arm_eor<flag>(
-        arm->registers[16], op1, op2, arm->barrel_carry
+        arm.registers[16], op1, op2, arm.barrel_carry
     );
-    arm->registers[rd] = result;
-    arm->registers[16] = cpsr;
+    arm.registers[rd] = result;
+    arm.registers[16] = cpsr;
 }
 
 // bitwise or
 template <flags_cond flag>
-void arm_orr(arm7tdmi_t* arm, const u32 op1, const u32 op2, const u8 rd) {
+void arm_orr(arm7tdmi& arm, const u32 op1, const u32 op2, const u8 rd) {
     const auto [result, cpsr] = arm_orr<flag>(
-        arm->registers[16], op1, op2, arm->barrel_carry
+        arm.registers[16], op1, op2, arm.barrel_carry
     );
-    arm->registers[rd] = result;
-    arm->registers[16] = cpsr;
+    arm.registers[rd] = result;
+    arm.registers[16] = cpsr;
 }
 
 // bitwise and
 template <flags_cond flag>
-void arm_tst(arm7tdmi_t* arm, const u32 op1, const u32 op2, const u8 rd) {
+void arm_tst(arm7tdmi& arm, const u32 op1, const u32 op2, const u8 rd) {
     const auto [_, cpsr] = arm_tst<flag>(
-        arm->registers[16], op1, op2, arm->barrel_carry
+        arm.registers[16], op1, op2, arm.barrel_carry
     );
-    arm->registers[16] = cpsr;
+    arm.registers[16] = cpsr;
 }
 
 // bitwise eor
 template <flags_cond flag>
-void arm_teq(arm7tdmi_t* arm, const u32 op1, const u32 op2, const u8 rd) {
+void arm_teq(arm7tdmi& arm, const u32 op1, const u32 op2, const u8 rd) {
     const auto [_, cpsr] = arm_teq<flag>(
-        arm->registers[16], op1, op2, arm->barrel_carry
+        arm.registers[16], op1, op2, arm.barrel_carry
     );
-    arm->registers[16] = cpsr;
+    arm.registers[16] = cpsr;
 }
 
 // bitwise or
 template <flags_cond flag>
-void arm_bic(arm7tdmi_t* arm, const u32 op1, const u32 op2, const u8 rd) {
+void arm_bic(arm7tdmi& arm, const u32 op1, const u32 op2, const u8 rd) {
     const auto [result, cpsr] = arm_bic<flag>(
-        arm->registers[16], op1, op2, arm->barrel_carry
+        arm.registers[16], op1, op2, arm.barrel_carry
     );
-    arm->registers[rd] = result;
-    arm->registers[16] = cpsr;
+    arm.registers[rd] = result;
+    arm.registers[16] = cpsr;
 }
 
 // bitwise or
 template <flags_cond flag>
-void arm_mov(arm7tdmi_t* arm, const u32 op1, const u32 op2, const u8 rd) {
+void arm_mov(arm7tdmi& arm, const u32 op1, const u32 op2, const u8 rd) {
     const auto [result, cpsr] = arm_mov<flag>(
-        arm->registers[16], op1, op2, arm->barrel_carry
+        arm.registers[16], op1, op2, arm.barrel_carry
     );
-    arm->registers[rd] = result;
-    arm->registers[16] = cpsr;
+    arm.registers[rd] = result;
+    arm.registers[16] = cpsr;
 }
 
 // bitwise or
 template <flags_cond flag>
-void arm_mvn(arm7tdmi_t* arm, const u32 op1, const u32 op2, const u8 rd) {
+void arm_mvn(arm7tdmi& arm, const u32 op1, const u32 op2, const u8 rd) {
     const auto [result, cpsr] = arm_mvn<flag>(
-        arm->registers[16], op1, op2, arm->barrel_carry
+        arm.registers[16], op1, op2, arm.barrel_carry
     );
-    arm->registers[rd] = result;
-    arm->registers[16] = cpsr;
+    arm.registers[rd] = result;
+    arm.registers[16] = cpsr;
 }
 
 } // arm7tdmi::arm::data_processing

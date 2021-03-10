@@ -14,19 +14,19 @@ namespace arm7tdmi {
 // however, they should not be part of a function or expression that
 // causes side effects, such as ++ or --.
 #define SET_COND_FLAGS_NZCV(n, z, c, v) \
-    arm->registers[16] = (arm->registers[16] & 0b1111'1111'1111'1111'1111'1111'1111'1111) | \
+    arm.registers[16] = (arm.registers[16] & 0b1111'1111'1111'1111'1111'1111'1111'1111) | \
         ((n) << 31) | ((z) << 30) | ((c) << 29) | ((v) << 28)
 
 #define SET_COND_FLAGS_NZC(n, z, c) \
-    arm->registers[16] = (arm->registers[16] & 0b0001'1111'1111'1111'1111'1111'1111'1111) | \
+    arm.registers[16] = (arm.registers[16] & 0b0001'1111'1111'1111'1111'1111'1111'1111) | \
         ((n) << 31) | ((z) << 30) | ((c) << 29)
 
 #define SET_COND_FLAGS_NZ(n, z) \
-    arm->registers[16] = (arm->registers[16] & 0b0011'1111'1111'1111'1111'1111'1111'1111) | \
+    arm.registers[16] = (arm.registers[16] & 0b0011'1111'1111'1111'1111'1111'1111'1111) | \
         ((n) << 31) | ((z) << 30)
 
 #define SET_COND_FLAGS_N(n) \
-    arm->registers[16] = (arm->registers[16] & 0b1111'1111'1111'1111'1111'1111'1111'1111) | \
+    arm.registers[16] = (arm.registers[16] & 0b1111'1111'1111'1111'1111'1111'1111'1111) | \
         ((n) << 31)
 
 #define GET_BIT(v, bit) ((v & (1 << (bit))) > 0)
@@ -37,7 +37,7 @@ namespace arm7tdmi {
 // if bit 31 of a, b = 1 and r = 1, then overflow did not happened
 #define FLAG_V_HELPER(a, b, r) ((a & 0x80000000) == (b & 0x80000000)) && ((a & 0x80000000) != (r & 0x80000000))
 
-#define GET_CARRY() GET_BIT(arm->registers[16], 29)
+#define GET_CARRY() GET_BIT(arm.registers[16], 29)
 
 #define scast(type) static_cast<type>
 #define rcast(type) reinterpret_cast<type>
@@ -58,39 +58,39 @@ __builtin_smul_overflow
 // branch or by trying to not branch at all.
 
 // template<bool update_flag = 1>
-// u32 arm7tdmi_ror(arm7tdmi_t* arm, const u32 val, const u32 shift) {
+// u32 arm7tdmi_ror(arm7tdmi& arm, const u32 val, const u32 shift) {
 //     return bit::rotr(val, shift);
 // }
 
-void thumb_and(arm7tdmi_t* arm, const u8 rs, const u8 rd) {
-    const u32 result = arm->registers[rd] & arm->registers[rs];
+void thumb_and(arm7tdmi& arm, const u8 rs, const u8 rd) {
+    const u32 result = arm.registers[rd] & arm.registers[rs];
     SET_COND_FLAGS_NZ(
         /* N */ GET_BIT(result, 31),
         /* Z */ result == 0
     );
-    arm->registers[rd] = result;
+    arm.registers[rd] = result;
 }
 
-void thumb_eor(arm7tdmi_t* arm, const u8 rs, const u8 rd) {
-    const u32 result = arm->registers[rd] ^ arm->registers[rs];
+void thumb_eor(arm7tdmi& arm, const u8 rs, const u8 rd) {
+    const u32 result = arm.registers[rd] ^ arm.registers[rs];
     SET_COND_FLAGS_NZ(
         /* N */ GET_BIT(result, 31),
         /* Z */ result == 0
     );
-    arm->registers[rd] = result;
+    arm.registers[rd] = result;
 }
 
-void thumb_lsl(arm7tdmi_t* arm, const u8 rs, const u8 rd) {
-    const u32 result = arm->registers[rd] << (arm->registers[rs] & 0xFF);
+void thumb_lsl(arm7tdmi& arm, const u8 rs, const u8 rd) {
+    const u32 result = arm.registers[rd] << (arm.registers[rs] & 0xFF);
 
     const bool carry = [&]() -> bool {
-        switch (arm->registers[rs] & 0xFF) {
+        switch (arm.registers[rs] & 0xFF) {
             case 0:
                 return GET_CARRY();
             case 1 ... 31:
-                return (arm->registers[rd] & (32 - arm->registers[rs])) > 0;
+                return (arm.registers[rd] & (32 - arm.registers[rs])) > 0;
             case 32:
-                return GET_BIT(arm->registers[rd], 0);
+                return GET_BIT(arm.registers[rd], 0);
             default:
                 return 0;
         }
@@ -101,20 +101,20 @@ void thumb_lsl(arm7tdmi_t* arm, const u8 rs, const u8 rd) {
         /* Z */ result == 0,
         /* C */ carry
     );
-    arm->registers[rd] = result;
+    arm.registers[rd] = result;
 }
 
-void thumb_lsr(arm7tdmi_t* arm, const u8 rs, const u8 rd) {
-    const u32 result = arm->registers[rd] >> rs;
+void thumb_lsr(arm7tdmi& arm, const u8 rs, const u8 rd) {
+    const u32 result = arm.registers[rd] >> rs;
 
     const bool carry = [&]() -> bool {
-        switch (arm->registers[rs] & 0xFF) {
+        switch (arm.registers[rs] & 0xFF) {
             case 0:
                 return GET_CARRY();
             case 1 ... 31:
-                return (arm->registers[rd] & arm->registers[rs]) > 0;
+                return (arm.registers[rd] & arm.registers[rs]) > 0;
             case 32:
-                return GET_BIT(arm->registers[rd], 31);
+                return GET_BIT(arm.registers[rd], 31);
             default:
                 return 0;
         }
@@ -125,11 +125,11 @@ void thumb_lsr(arm7tdmi_t* arm, const u8 rs, const u8 rd) {
         /* Z */ result == 0,
         /* C */ carry
     );
-    arm->registers[rd] = result;
+    arm.registers[rd] = result;
 }
 
-void thumb_asr(arm7tdmi_t* arm, const u8 rs, const u8 rd) {
-    switch (arm->registers[rs]) {
+void thumb_asr(arm7tdmi& arm, const u8 rs, const u8 rd) {
+    switch (arm.registers[rs]) {
         case 0:
         case 1 ... 31:
         default:
@@ -137,17 +137,17 @@ void thumb_asr(arm7tdmi_t* arm, const u8 rs, const u8 rd) {
     };
 
     // i think if i cast reg[rd] to signed, this will be an asr
-    const u32 result = static_cast<u32>(static_cast<int32_t>(arm->registers[rd]) >> arm->registers[rs]);
-    // const u32 result = (arm->registers[rd] >> arm->registers[rs]) | (arm->registers[rd] & 0x80000000);
+    const u32 result = static_cast<u32>(static_cast<int32_t>(arm.registers[rd]) >> arm.registers[rs]);
+    // const u32 result = (arm.registers[rd] >> arm.registers[rs]) | (arm.registers[rd] & 0x80000000);
     
     const bool carry = [&]() -> bool {
-        switch (arm->registers[rs] & 0xFF) {
+        switch (arm.registers[rs] & 0xFF) {
             case 0:
                 return GET_CARRY();
             case 1 ... 31:
-                return (arm->registers[rd] & arm->registers[rs]) > 0;
+                return (arm.registers[rd] & arm.registers[rs]) > 0;
             default:
-                return GET_BIT(arm->registers[rd], 31);
+                return GET_BIT(arm.registers[rd], 31);
         }
     }();
 
@@ -156,42 +156,42 @@ void thumb_asr(arm7tdmi_t* arm, const u8 rs, const u8 rd) {
         /* Z */ result == 0,
         /* C */ carry
     );
-    arm->registers[rd] = result;    
+    arm.registers[rd] = result;    
 }
 
-void thumb_adc(arm7tdmi_t* arm, const u8 rs, const u8 rd) {
-    const u32 result = arm->registers[rd] + arm->registers[rs] + GET_CARRY();
+void thumb_adc(arm7tdmi& arm, const u8 rs, const u8 rd) {
+    const u32 result = arm.registers[rd] + arm.registers[rs] + GET_CARRY();
     SET_COND_FLAGS_NZCV(
         /* N */ GET_BIT(result, 31),
         /* Z */ result == 0,
-        /* C */ (arm->registers[rd] + arm->registers[rs] + GET_CARRY()) > 0xFF'FF'FF'FFU,
-        /* V */ FLAG_V_HELPER(arm->registers[rd], arm->registers[rs], result)
+        /* C */ (arm.registers[rd] + arm.registers[rs] + GET_CARRY()) > 0xFF'FF'FF'FFU,
+        /* V */ FLAG_V_HELPER(arm.registers[rd], arm.registers[rs], result)
     );
-    arm->registers[rd] = result;
+    arm.registers[rd] = result;
 }
 
-void thumb_sbc(arm7tdmi_t* arm, const u8 rs, const u8 rd) {
-    const u32 result = arm->registers[rd] - (arm->registers[rs] + GET_CARRY());
+void thumb_sbc(arm7tdmi& arm, const u8 rs, const u8 rd) {
+    const u32 result = arm.registers[rd] - (arm.registers[rs] + GET_CARRY());
     SET_COND_FLAGS_NZCV(
         /* N */ GET_BIT(result, 31),
         /* Z */ result == 0,
-        /* C */ arm->registers[rd] < (arm->registers[rs] + GET_CARRY()),
-        /* V */ FLAG_V_HELPER(arm->registers[rd], arm->registers[rs], result)
+        /* C */ arm.registers[rd] < (arm.registers[rs] + GET_CARRY()),
+        /* V */ FLAG_V_HELPER(arm.registers[rd], arm.registers[rs], result)
     );
-    arm->registers[rd] = result;
+    arm.registers[rd] = result;
 }
 
-void thumb_ror(arm7tdmi_t* arm, const u8 rs, const u8 rd) {
-    const u32 result = bit::rotr(arm->registers[rd], arm->registers[rs]);
+void thumb_ror(arm7tdmi& arm, const u8 rs, const u8 rd) {
+    const u32 result = bit::rotr(arm.registers[rd], arm.registers[rs]);
     
     const bool carry = [&]() -> bool {
-        switch (arm->registers[rs] & 0xFF) {
+        switch (arm.registers[rs] & 0xFF) {
             case 0:
                 return GET_CARRY();
             case 1 ... 31:
-                return (arm->registers[rd] & arm->registers[rs]) > 0;
+                return (arm.registers[rd] & arm.registers[rs]) > 0;
             case 32:
-                return GET_BIT(arm->registers[rd], 31);
+                return GET_BIT(arm.registers[rd], 31);
             default:
                 return 0;
         }
@@ -202,84 +202,84 @@ void thumb_ror(arm7tdmi_t* arm, const u8 rs, const u8 rd) {
         /* Z */ result == 0,
         /* C */ carry
     );
-    arm->registers[rd] = result;
+    arm.registers[rd] = result;
 }
 
-void thumb_tst(arm7tdmi_t* arm, const u8 rs, const u8 rd) {    
-    arm->registers[rd] = arm->registers[rd] & arm->registers[rs];
+void thumb_tst(arm7tdmi& arm, const u8 rs, const u8 rd) {    
+    arm.registers[rd] = arm.registers[rd] & arm.registers[rs];
     SET_COND_FLAGS_NZ(
-        /* N */ GET_BIT(arm->registers[rd], 31),
-        /* Z */ arm->registers[rd] == 0
+        /* N */ GET_BIT(arm.registers[rd], 31),
+        /* Z */ arm.registers[rd] == 0
     );
 }
 
-void thumb_neg(arm7tdmi_t* arm, const u8 rs, const u8 rd) {
-    const u32 result = 0 - arm->registers[rs];
+void thumb_neg(arm7tdmi& arm, const u8 rs, const u8 rd) {
+    const u32 result = 0 - arm.registers[rs];
     SET_COND_FLAGS_NZCV(
         /* N */ GET_BIT(result, 31),
         /* Z */ result == 0,
         /* C */ result > 0,
-        /* V */ FLAG_V_HELPER(arm->registers[rd], arm->registers[rs], result)
+        /* V */ FLAG_V_HELPER(arm.registers[rd], arm.registers[rs], result)
     );
-    arm->registers[rd] = result;
+    arm.registers[rd] = result;
 }
 
-void thumb_cmp(arm7tdmi_t* arm, const u8 rs, const u8 rd) {
-    const u32 result = arm->registers[rd] - arm->registers[rs];
+void thumb_cmp(arm7tdmi& arm, const u8 rs, const u8 rd) {
+    const u32 result = arm.registers[rd] - arm.registers[rs];
     SET_COND_FLAGS_NZCV(
         /* N */ GET_BIT(result, 31),
         /* Z */ result == 0,
-        /* C */ arm->registers[rd] < arm->registers[rs],
-        /* V */ FLAG_V_HELPER(arm->registers[rd], arm->registers[rs], result)
+        /* C */ arm.registers[rd] < arm.registers[rs],
+        /* V */ FLAG_V_HELPER(arm.registers[rd], arm.registers[rs], result)
     );
 }
 
-void thumb_cmn(arm7tdmi_t* arm, const u8 rs, const u8 rd) {
-    const u32 result = arm->registers[rd] + arm->registers[rs];
+void thumb_cmn(arm7tdmi& arm, const u8 rs, const u8 rd) {
+    const u32 result = arm.registers[rd] + arm.registers[rs];
     SET_COND_FLAGS_NZCV(
         /* N */ GET_BIT(result, 31),
         /* Z */ result == 0,
-        /* C */ (arm->registers[rd] + arm->registers[rs]) > 0xFFFFFFFFU,
-        /* V */ FLAG_V_HELPER(arm->registers[rd], arm->registers[rs], result)
+        /* C */ (arm.registers[rd] + arm.registers[rs]) > 0xFFFFFFFFU,
+        /* V */ FLAG_V_HELPER(arm.registers[rd], arm.registers[rs], result)
     );
 }
 
-void thumb_orr(arm7tdmi_t* arm, const u8 rs, const u8 rd) {
-    arm->registers[rd] = arm->registers[rd] | arm->registers[rs];
+void thumb_orr(arm7tdmi& arm, const u8 rs, const u8 rd) {
+    arm.registers[rd] = arm.registers[rd] | arm.registers[rs];
     SET_COND_FLAGS_NZ(
-        /* N */ GET_BIT(arm->registers[rd], 31),
-        /* Z */ arm->registers[rd] == 0
+        /* N */ GET_BIT(arm.registers[rd], 31),
+        /* Z */ arm.registers[rd] == 0
     );
 }
 
-void thumb_mul(arm7tdmi_t* arm, const u8 rs, const u8 rd) {
-    const u32 result = arm->registers[rd] * arm->registers[rs];
+void thumb_mul(arm7tdmi& arm, const u8 rs, const u8 rd) {
+    const u32 result = arm.registers[rd] * arm.registers[rs];
     SET_COND_FLAGS_NZCV(
         /* N */ GET_BIT(result, 31),
         /* Z */ result == 0,
-        /* C */ (arm->registers[rd] * arm->registers[rs]) > 0xFFFFFFFFU,
-        /* V */ FLAG_V_HELPER(arm->registers[rd], arm->registers[rs], result)
+        /* C */ (arm.registers[rd] * arm.registers[rs]) > 0xFFFFFFFFU,
+        /* V */ FLAG_V_HELPER(arm.registers[rd], arm.registers[rs], result)
     );
-    arm->registers[rd] = result;
+    arm.registers[rd] = result;
 }
 
 // data sheet says rd AND NOT Rs
 // not sure if it means making Rs either 1-0,
 // or complement it with ~
-void thumb_bic(arm7tdmi_t* arm, const u8 rs, const u8 rd) {
-    arm->registers[rd] = arm->registers[rd] & (~arm->registers[rs]);
+void thumb_bic(arm7tdmi& arm, const u8 rs, const u8 rd) {
+    arm.registers[rd] = arm.registers[rd] & (~arm.registers[rs]);
     SET_COND_FLAGS_NZ(
-        /* N */ GET_BIT(arm->registers[rd], 31),
-        /* Z */ arm->registers[rd] == 0
+        /* N */ GET_BIT(arm.registers[rd], 31),
+        /* Z */ arm.registers[rd] == 0
     );
 }
 
 // same as above comments but no AND, just NOT
-void thumb_mvn(arm7tdmi_t* arm, const u8 rs, const u8 rd) {
-    arm->registers[rd] = ~arm->registers[rs];
+void thumb_mvn(arm7tdmi& arm, const u8 rs, const u8 rd) {
+    arm.registers[rd] = ~arm.registers[rs];
     SET_COND_FLAGS_NZ(
-        /* N */ GET_BIT(arm->registers[rd], 31),
-        /* Z */ arm->registers[rd] == 0
+        /* N */ GET_BIT(arm.registers[rd], 31),
+        /* Z */ arm.registers[rd] == 0
     );
 }
 

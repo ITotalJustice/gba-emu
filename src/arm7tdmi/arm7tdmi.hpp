@@ -108,7 +108,7 @@ enum class condition {
 // - EXCEPTION_UNDEFINED_INSTRUCTION | EXCEPTION_SOFTWARE_INTERRUPT
 
 // theres 1 cpsr and 5 spsr
-typedef union arm7tdmi_psr {
+union arm7tdmi_psr {
     struct {
         // condition flags
         u32 N : 1; // negative, less than
@@ -126,10 +126,10 @@ typedef union arm7tdmi_psr {
         u32 M : 5; // mode
     };
     u32 word;
-} arm7tdmi_psr_t;
+};
 
 // in arm state, 16 gReg are visible and 1-2 sReg
-typedef struct arm7tdmi {
+struct arm7tdmi {
     // r14 - sub link reg, gets set to r15 during branch and links
     // r15 - pc, bits 0-1 are zero in arm state, bit-0 is zero in thumb
     // r16 - cpsr (current program status reg).
@@ -140,7 +140,7 @@ typedef struct arm7tdmi {
     u32 status_registers[6];
 
     bool barrel_carry : 1;
-} arm7tdmi_t;
+};
 
 void arm_decode_test(u32 op);
 void thumb_decode_test(u16 op);
@@ -199,10 +199,7 @@ constexpr u32 set_flag(const u32 cpsr, const bool value) {
 
 // cond should already be a shifted down opcode, ie, opcode >> 28
 constexpr bool test_cond(const u32 cpsr, const u8 cond) {
-    assert(
-        cond < 0x10 &&
-        "invalid cond value!"
-    );
+    assert(cond < 0x10 && "invalid cond value!");
 
     // TODO: use `using enum` once i have a gcc version that supports it!
 
@@ -287,4 +284,4 @@ constexpr u32 set_flags(const u32 cpsr, const auto ...args) {
     }
 }
 
-} // arm7tdmi
+} // namespace arm7tdmi
