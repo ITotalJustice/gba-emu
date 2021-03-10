@@ -9,3 +9,5 @@ starting to write a gba emulator
 all sources and refrences used will be linked / credited here.
 
 - <https://www.dwedit.org/files/ARM7TDMI.pdf>
+
+- <https://problemkaputt.de/gbatek.htm>
