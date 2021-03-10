@@ -16,6 +16,7 @@ source = files([
     # tests
     'src/arm7tdmi/tests/test_barrel_shifter.cpp',
     'src/arm7tdmi/tests/test_arm_data_processing.cpp',
+    'src/arm7tdmi/tests/test_arm_multiply.cpp',
     'src/arm7tdmi/tests/test_common.cpp',
 ])
 
@@ -32,6 +33,12 @@ cflags = [
     # '-Wno-unused',
     '-Wall',
     '-Wextra',
+    '-Wswitch-enum',
+    '-Wduplicated-branches',
+    '-Wduplicated-cond',
+    '-Wshadow',
+    '-Wfatal-errors',
+    '-Wdouble-promotion',
     # '-Wno-format',
 ]
 # 0b0000'0000'0000'0000'0000'0000

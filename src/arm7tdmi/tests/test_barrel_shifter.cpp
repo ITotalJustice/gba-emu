@@ -45,7 +45,7 @@ constexpr void shift_test() {
             },
         }};
 
-        static_assert(test_func(shift<shift_type::lsl>, args), "failed lsl tests!");
+        static_assert(test_func(shift<type::lsl>, args), "failed lsl tests!");
     }
 
     {
@@ -68,7 +68,34 @@ constexpr void shift_test() {
             },
         }};
 
-        static_assert(test_func(shift<shift_type::asr>, args), "failed asr tests!");
+        static_assert(test_func(shift<type::asr>, args), "failed asr tests!");
+    }
+
+    {
+        constexpr std::array<Args, 5> args{{
+            {
+                .value{ 0b1000'0000'0000'0000'0000'0000'0000'0000, 0, true },
+                .result{ 0b1000'0000'0000'0000'0000'0000'0000'0000, true }
+            },
+            {
+                .value{ 0b1000'0000'0000'0000'0000'0000'0000'0011, 2, false },
+                .result{ 0b1110'0000'0000'0000'0000'0000'0000'0000, true }
+            },
+            {
+                .value{ 0b0000'1111'1111'1111'1111'1111'1111'1111, 32, true },
+                .result{ 0b0000'1111'1111'1111'1111'1111'1111'1111, false }
+            },
+            {
+                .value{ 0b1000'0000'0000'0000'0000'0000'0000'0011, 34, false },
+                .result{ 0b1110'0000'0000'0000'0000'0000'0000'0000, true }
+            },
+            {
+                .value{ 0b1000'0000'0000'0000'0000'0000'0000'0011, 64, false },
+                .result{ 0b1000'0000'0000'0000'0000'0000'0000'0011, true }
+            },
+        }};
+
+        static_assert(test_func(shift<type::ror>, args), "failed ror tests!");
     }
 }
 

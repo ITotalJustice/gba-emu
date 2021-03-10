@@ -3,8 +3,6 @@
 #include "../arm7tdmi.hpp"
 #include "../barrel_shifter.hpp"
 
-#include <array>
-
 namespace arm7tdmi::arm::data_processing {
 
 enum class flags_cond {
@@ -16,8 +14,8 @@ enum class flags_cond {
 struct [[nodiscard]] arm_bx_result { u32 new_pc, new_cpsr; };
 constexpr arm_bx_result arm_bx(const u32 cpsr, const u32 rn) {
     return { 
-        rn,
-        switch_state( // set new state to thumb if bit-0 = 1, else set to arm.
+        .new_pc = rn,
+        .new_cpsr = switch_state( // set new state to thumb if bit-0 = 1, else set to arm.
             cpsr,
             static_cast<state>(bit::is_set<0>(rn))
         )
@@ -25,11 +23,8 @@ constexpr arm_bx_result arm_bx(const u32 cpsr, const u32 rn) {
 }
 
 // returns new PC
-constexpr void arm_bx(arm7tdmi_t* arm, const u8 rn) {
-    assert(
-        rn != 15 &&
-        "R15 is UB!"
-    );
+void arm_bx(arm7tdmi_t* arm, const u8 rn) {
+    assert(rn != 15 && "R15 is UB!");
 
     const auto [new_pc, new_cpsr] = arm_bx(arm->registers[16], arm->registers[rn]);
     arm->registers[15] = new_pc;
@@ -37,15 +32,7 @@ constexpr void arm_bx(arm7tdmi_t* arm, const u8 rn) {
 }
 
 constexpr s32 branch_offset(const u32 offset) {
-    // not sure if sign_extend works on all platforms, so just in case...
-    if constexpr(bit::sign_extend<24>(0b1100'1111'1111'1111'1111'1111) == 0b1111'1111'0011'1111'1111'1111'1111'1100) {
-        return static_cast<s32>(bit::sign_extend<24>(offset) << 2);
-    }
-
-    if (bit::is_set<23>(offset)) {
-        return static_cast<s32>(0b1111'1111'0000'0000'0000'0000'0000'0000 | (offset << 2));
-    }
-    return static_cast<s32>(offset << 2);
+    return static_cast<s32>(bit::sign_extend<24>(offset) << 2);
 }
 
 [[nodiscard]]
@@ -62,11 +49,11 @@ constexpr auto arm_bl(const u32 pc, const s32 offset) -> arm_bl_result {
     };
 }
 
-constexpr void arm_b(arm7tdmi_t* arm, const s32 offset) {
+void arm_b(arm7tdmi_t* arm, const s32 offset) {
     arm->registers[15] = arm_b(arm->registers[15], offset);
 }
 
-constexpr void arm_bl(arm7tdmi_t* arm, const s32 offset) {
+void arm_bl(arm7tdmi_t* arm, const s32 offset) {
     const auto [new_pc, new_link] = arm_bl(arm->registers[15], offset);
     arm->registers[14] = new_link;
     arm->registers[15] = new_pc;
@@ -81,19 +68,60 @@ struct Test { u32 result, cpsr; };
 template <flags_cond flag>
 constexpr Test alu_flags_logical(const u32 result, const u32 cpsr, const bool barrel_carry) {
     if constexpr(flag == flags_cond::modify) {
-        return {result, set_flags<ftest::nzc>(cpsr,
-            bit::is_set<31>(result),
-            result == 0,
-            barrel_carry
-        )};
+        return {
+            .result = result,
+            .cpsr = set_flags<ftest::nzc>(
+                cpsr,
+                bit::is_set<31>(result),
+                result == 0,
+                barrel_carry
+            )
+        };
     }
 
-    return {result, cpsr};
+    return { .result = result, .cpsr = cpsr };
 }
+
+enum class alu_logical {
+    AND,
+    EOR,
+    ORR,
+    BIC,
+    TST,
+    TEQ,
+    MOV,
+    MVN,
+};
+
+/*
+.5.4 Writing to R15
+    When Rd is a register other than R15, the condition code flags in the CPSR may be 
+    updated from the ALU flags as described above. 
+    When Rd is R15 and the S flag in the instruction is not set the result of the operation is 
+    placed in R15 and the CPSR is unaffected.
+
+    When Rd is R15 and the S flag is set the result of the operation is placed in R15 and 
+    the SPSR corresponding to the current mode is moved to the CPSR. This allows state 
+    changes which atomically restore both PC and CPSR. This form of instruction should 
+    not be used in User mode.
+
+4.5.5 Using R15 as an operand
+    If R15 (the PC) is used as an operand in a data processing instruction the register is 
+    used directly. 
+    The PC value will be the address of the instruction, plus 8 or 12 bytes due to instruction 
+    prefetching. If the shift amount is specified in the instruction, the PC will be 8 bytes 
+    ahead. If a register is used to specify the shift amount the PC will be 12 bytes ahead.
+*/
+// template <alu_logical alu, flags_cond flag>
+// constexpr Test alu_test(const u32 cpsr, const u32 op1, const u32 op2, const bool barrel_carry) {
+//     if constexpr(alu == alu_logical::AND) {
+
+//     }
+// }
 
 // bitwise and
 template <flags_cond flag>
-constexpr Test arm_and(const u32 cpsr, const u32 op1, const u32 op2, const bool barrel_carry) {
+constexpr Test arm_and2(const u32 cpsr, const u32 op1, const u32 op2, const bool barrel_carry) {
     const u32 result = op1 & op2;
     return alu_flags_logical<flag>(result, cpsr, barrel_carry);
 }
@@ -132,7 +160,7 @@ template <flags_cond flag>
 constexpr Test arm_teq(const u32 cpsr, const u32 op1, const u32 op2, const bool barrel_carry) {
     static_assert(flag == flags_cond::modify);
     const u32 result = op1 ^ op2;
-    return idk<flag>(result, cpsr, barrel_carry);
+    return alu_flags_logical<flag>(result, cpsr, barrel_carry);
 }
 
 // bitwise mov op2
@@ -140,7 +168,7 @@ template <flags_cond flag>
 constexpr Test arm_mov(const u32 cpsr, const u32 op1, const u32 op2, const bool barrel_carry) {
     static_cast<void>(op1);
     const u32 result = op2;
-    return idk<flag>(result, cpsr, barrel_carry);
+    return alu_flags_logical<flag>(result, cpsr, barrel_carry);
 }
 
 // bitwise mmob not op2
@@ -148,59 +176,13 @@ template <flags_cond flag>
 constexpr Test arm_mvn(const u32 cpsr, const u32 op1, const u32 op2, const bool barrel_carry) {
     static_cast<void>(op1);
     const u32 result = ~op2;
-    return idk<flag>(result, cpsr, barrel_carry);
-}
-
-constexpr void arm_and_test() {
-    struct Args {
-        struct Value {
-            u32 cpsr, op1, op2;
-            bool carry;
-        } value;
-        struct Result {
-            u32 result, cpsr;
-        } result;
-    };
-
-    constexpr std::array<Args, 4> args{{
-        {
-            .value{0x00, 0x00, 0x00, true},
-            .result{0x00, 0b0110'0000'0000'0000'0000'0000'0000'0000}
-        },
-        {
-            .value{0x00, 0x80, 0x80, true},
-            .result{0x80, 0b0010'0000'0000'0000'0000'0000'0000'0000}
-        },
-        {
-            .value{0x00, 0xFFFFFFFF, 0xFFFFFFFF, true},
-            .result{0xFF'FF'FF'FF, 0b1010'0000'0000'0000'0000'0000'0000'0000}
-        },
-        {
-            .value{0x00, 0x00, 0x00, false},
-            .result{0x00, 0b0100'0000'0000'0000'0000'0000'0000'0000}
-        }
-    }};
-
-    constexpr auto func_test = [](const auto span) {
-        for (const auto [value, result] : span) {
-            const auto r = arm_and<flags_cond::modify>(value.cpsr, value.op1, value.op2, value.carry);
-            if (r.result != result.result || r.cpsr != result.cpsr) {
-                return false;
-            }
-        }
-        return true;
-    };
-
-    static_assert(
-        func_test(args) == true,
-        "failed to pass arm AND test!"
-    );
+    return alu_flags_logical<flag>(result, cpsr, barrel_carry);
 }
 
 // bitwise and
 template <flags_cond flag>
 void arm_and(arm7tdmi_t* arm, const u32 op1, const u32 op2, const u8 rd) {
-    const auto [result, cpsr] = arm_and<flag>(
+    const auto [result, cpsr] = arm_and2<flag>(
         arm->registers[16], op1, op2, arm->barrel_carry
     );
     arm->registers[rd] = result;

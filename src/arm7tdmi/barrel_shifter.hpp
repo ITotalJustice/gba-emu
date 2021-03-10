@@ -49,49 +49,49 @@ constexpr u32 shift_rotate_right(const u32 v, const u32 shift) {
 
 namespace barrel {
 
-enum class shift_type {
-    lsl, lsr, asr, ror,
+enum class type {
+    lsl, lsr, asr, ror, rrx
 };
 
 struct [[nodiscard]] shift_result { u32 result; bool carry; };
-template <shift_type type>
-constexpr auto shift(const u32 v, const u32 shift, const bool old_carry) -> shift_result {
-    if constexpr(type == shift_type::lsl) {
-        switch (shift) {
+template <type type>
+constexpr auto shift(const u32 v, const u32 shift_v, const bool old_carry) -> shift_result {
+    if constexpr(type == type::lsl) {
+        switch (shift_v) {
             case 0: return { v, old_carry };
-            case 1 ... 31: return { v << shift, bit::is_set(v, 32 - shift) };
+            case 1 ... 31: return { v << shift_v, bit::is_set(v, 32 - shift_v) };
             case 32: return { 0, bit::is_set<0>(v) };
             default: return { 0, false };
         }
     }
-    if constexpr(type == shift_type::lsr) {
-        assert(shift != 0 && "lsr #0 should be encoded as lsl #0!");
-
-        if (shift < 32) [[likely]] {
-            return {v >> shift, bit::is_set(v, shift - 1)};
-        } else if (v == 32) {
-            return {0, bit::is_set<31>(v)};
-        } else {
-            return {0, false};
+    if constexpr(type == type::lsr) {
+        switch (shift_v) {
+            case 0: return { v, old_carry };
+            case 1 ... 31: return { v << shift_v, bit::is_set(v, 32 - shift_v) };
+            case 32: return { 0, bit::is_set<31>(v) };
+            default: return { 0, false };
         }
     }
-    if constexpr(type == shift_type::asr) {
-        assert(shift != 0 && "asr #0 should be encoded as lsl #0!");
-
-        if (shift < 32) [[likely]] {
-            return {shift_arithmetic_right(v, shift), bit::is_set(v, shift - 1)};
-        } else {
-            return {shift_arithmetic_right(v, 31), bit::is_set<31>(v)};
+    if constexpr(type == type::asr) {
+        switch (shift_v) {
+            case 0: return { v, old_carry };
+            case 1 ... 31: return { shift_arithmetic_right(v, shift_v), bit::is_set(v, shift_v - 1) };
+            default: return { shift_arithmetic_right(v, 31), bit::is_set<31>(v) };
         }
     }
-    if constexpr(type == shift_type::ror) {
-        assert(shift != 0 && "ror #0 should be encoded as lsl #0!");
-
-        if (shift < 32) [[likely]] {
-            return {shift_arithmetic_right(v, shift), bit::is_set(v, shift - 1)};
-        } else {
-            return {shift_arithmetic_right(v, 31), bit::is_set<31>(v)};
+    if constexpr(type == type::ror) {
+        switch (shift_v) {
+            case 0: return { v, old_carry };
+            case 1 ... 31: return { bit::rotr(v, shift_v), bit::is_set(v, shift_v - 1) };
+            case 32: return { v, bit::is_set(v, 31) };
+            // todo: remove uneeded recursion
+            default: return shift<type>(v, shift_v - 32, old_carry);// { bit::rotr(v, shift_v & 31), bit::is_set(v, (shift_v & 31) - 1) };
         }
+    }
+    // ror imm #0 is a special RRX shift, which is >> 1 with the carry being shifted in
+    if constexpr(type == type::rrx) {
+        assert(shift_v == 0 && "invalid shift param for rrx!");
+        return { (v >> 1) | (old_carry << 31), bit::is_set(v, 0) };
     }
 }
 
