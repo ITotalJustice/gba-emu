@@ -351,6 +351,65 @@ struct psr {
     constexpr auto set_flag(const bool on) noexcept {
         set_flag<flag>(this->value, on);
     }
+
+    template <ftest flag>
+    #if 1
+    constexpr u32 set_flags(const bool p1 = false, const bool p2 = false, const bool p3 = false, const bool p4 = false) {
+        if constexpr(flag == ftest::v) {
+            return (this->value & FLAG_V_MASK) | (p1 << FLAG_V_BIT);
+        }
+        if constexpr(flag == ftest::c) {
+            return (this->value & FLAG_C_MASK) | (p1 << FLAG_C_BIT);
+        }
+        if constexpr(flag == ftest::z) {
+            return (this->value & FLAG_Z_MASK) | (p1 << FLAG_Z_BIT);
+        }
+        if constexpr(flag == ftest::n) {
+            return (this->value & FLAG_N_MASK) | (p1 << FLAG_N_BIT);
+        }
+        if constexpr(flag == ftest::nz) {
+            return (this->value & 0b0011'1111'1111'1111'1111'1111'1111'1111) | (p1 << FLAG_N_BIT) | (p2 << FLAG_Z_BIT);
+        }
+        if constexpr(flag == ftest::nzc) {
+            return (this->value & 0b0001'1111'1111'1111'1111'1111'1111'1111) | (p1 << FLAG_N_BIT) | (p2 << FLAG_Z_BIT) | (p3 << FLAG_C_BIT);
+        }
+        if constexpr(flag == ftest::nzcv) {
+            return (this->value & 0b0000'1111'1111'1111'1111'1111'1111'1111) | (p1 << FLAG_N_BIT) | (p2 << FLAG_Z_BIT) | (p3 << FLAG_C_BIT) | (p4 << FLAG_V_BIT);
+        }
+    #else
+    constexpr u32 set_flags(const auto ...args) {
+        const std::array list{args...};
+
+        if constexpr(flag == ftest::v) {
+            static_assert(sizeof...(args) == 1);
+            return set_flag<flags::V>(this->value, list[0]);
+        }
+        if constexpr(flag == ftest::c) {
+            static_assert(sizeof...(args) == 1);
+            return set_flag<flags::C>(this->value, list[0]);
+        }
+        if constexpr(flag == ftest::z) {
+            static_assert(sizeof...(args) == 1);
+            return set_flag<flags::Z>(this->value, list[0]);
+        }
+        if constexpr(flag == ftest::n) {
+            static_assert(sizeof...(args) == 1);
+            return set_flag<flags::N>(this->value, list[0]);
+        }
+        if constexpr(flag == ftest::nz) {
+            static_assert(sizeof...(args) == 2);
+            return set_flag<flags::N>(set_flag<flags::Z>(this->value, list[1]), list[0]);
+        }
+        if constexpr(flag == ftest::nzc) {
+            static_assert(sizeof...(args) == 3);
+            return set_flag<flags::N>(set_flag<flags::Z>(set_flag<flags::C>(this->value, list[2]), list[1]), list[0]);
+        }
+        if constexpr(flag == ftest::nzcv) {
+            static_assert(sizeof...(args) == 4);
+            return set_flag<flags::N>(set_flag<flags::Z>(set_flag<flags::C>(set_flag<flags::V>(this->value, list[3]), list[2]), list[1]), list[0]);
+        }
+    #endif
+    }
 };
 
 // in arm state, 16 gReg are visible and 1-2 sReg
@@ -387,7 +446,7 @@ struct arm7tdmi {
         return this->registers[REGISTER_SP_INDEX];
     }
 
-    constexpr auto set_sp(const u16 v) noexcept {
+    constexpr auto set_sp(const u32 v) noexcept {
         this->registers[REGISTER_SP_INDEX] = v;
     }
 
@@ -396,7 +455,7 @@ struct arm7tdmi {
         return this->registers[REGISTER_LR_INDEX];
     }
 
-    constexpr auto set_lr(const u16 v) noexcept {
+    constexpr auto set_lr(const u32 v) noexcept {
         this->registers[REGISTER_LR_INDEX] = v;
     }
 
@@ -405,7 +464,7 @@ struct arm7tdmi {
         return this->registers[REGISTER_PC_INDEX];
     }
 
-    constexpr auto set_pc(const u16 v) noexcept {
+    constexpr auto set_pc(const u32 v) noexcept {
         this->registers[REGISTER_PC_INDEX] = v;
     }
 
@@ -414,7 +473,7 @@ struct arm7tdmi {
         return this->cpsr.value;
     }
 
-    constexpr auto set_cpsr(const u16 v) noexcept {
+    constexpr auto set_cpsr(const u32 v) noexcept {
         this->cpsr.value = v;
     }
 

@@ -1,4 +1,6 @@
 #include "arm7tdmi/arm7tdmi.hpp"
+#include "arm7tdmi/thumb/alu_operations.hpp"
+
 #include "mem/memory_map.hpp"
 #include "mem/io_types.hpp"
 #include "bit.hpp"
@@ -241,6 +243,10 @@ int main(int argc, char** argv) {
             print_rom_header(*rom_data);
         }
     }
+
+    int neg = -5;
+    int result = (~neg) + 1;
+    printf("value: %d\n", result);
 
     // for (uint32_t i = 0; i < UINT32_MAX; ++i) {
     //     if (test(i) != 0) {
