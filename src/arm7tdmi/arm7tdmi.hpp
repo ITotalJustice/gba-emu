@@ -107,44 +107,6 @@ enum class condition {
 // - EXCEPTION_ABORT_PREFETCH
 // - EXCEPTION_UNDEFINED_INSTRUCTION | EXCEPTION_SOFTWARE_INTERRUPT
 
-// theres 1 cpsr and 5 spsr
-union arm7tdmi_psr {
-    struct {
-        // condition flags
-        u32 N : 1; // negative, less than
-        u32 Z : 1; // zero
-        u32 C : 1; // carry, borrow, extend
-        u32 V : 1; // overflow
-        
-        // reserved
-        u32 reserved : 20;
-        
-        // control
-        u32 I : 1; // IRQ disable (1=off,0=on)
-        u32 F : 1; // FIQ disable (1=off,0=on)
-        u32 T : 1; // state bit (1=thumb,0=thumb)
-        u32 M : 5; // mode
-    };
-    u32 word;
-};
-
-// in arm state, 16 gReg are visible and 1-2 sReg
-struct arm7tdmi {
-    // r14 - sub link reg, gets set to r15 during branch and links
-    // r15 - pc, bits 0-1 are zero in arm state, bit-0 is zero in thumb
-    // r16 - cpsr (current program status reg).
-    // hoping these can indexed as an arrary...
-    u32 registers[31];
-    
-    // these should be union / struct bitfields for each flag bit
-    u32 status_registers[6];
-
-    bool barrel_carry : 1;
-};
-
-void arm_decode_test(u32 op);
-void thumb_decode_test(u16 op);
-
 constexpr u32 switch_state(const uint32_t cpsr, const state new_state) {
     return (cpsr & 0b1111'1111'1111'1111'1111'1111'1101'1111) | (static_cast<u32>(new_state) << 5);
 }
@@ -260,7 +222,32 @@ enum class ftest {
 // rather than multiple masks / shifts.
 // std::array should also be optimised away
 // TODO: try and remove std::array
+
 template <ftest flag>
+#if 1
+constexpr u32 set_flags(const u32 cpsr, const bool p1 = false, const bool p2 = false, const bool p3 = false, const bool p4 = false) {
+    if constexpr(flag == ftest::v) {
+        return (cpsr & FLAG_V_MASK) | (p1 << FLAG_V_BIT);
+    }
+    if constexpr(flag == ftest::c) {
+        return (cpsr & FLAG_C_MASK) | (p1 << FLAG_C_BIT);
+    }
+    if constexpr(flag == ftest::z) {
+        return (cpsr & FLAG_Z_MASK) | (p1 << FLAG_Z_BIT);
+    }
+    if constexpr(flag == ftest::n) {
+        return (cpsr & FLAG_N_MASK) | (p1 << FLAG_N_BIT);
+    }
+    if constexpr(flag == ftest::nz) {
+        return (cpsr & 0b0011'1111'1111'1111'1111'1111'1111'1111) | (p1 << FLAG_N_BIT) | (p2 << FLAG_Z_BIT);
+    }
+    if constexpr(flag == ftest::nzc) {
+        return (cpsr & 0b0001'1111'1111'1111'1111'1111'1111'1111) | (p1 << FLAG_N_BIT) | (p2 << FLAG_Z_BIT) | (p3 << FLAG_C_BIT);
+    }
+    if constexpr(flag == ftest::nzcv) {
+        return (cpsr & 0b0000'1111'1111'1111'1111'1111'1111'1111) | (p1 << FLAG_N_BIT) | (p2 << FLAG_Z_BIT) | (p3 << FLAG_C_BIT) | (p4 << FLAG_V_BIT);
+    }
+#else
 constexpr u32 set_flags(const u32 cpsr, const auto ...args) {
     const std::array list{args...};
 
@@ -292,6 +279,247 @@ constexpr u32 set_flags(const u32 cpsr, const auto ...args) {
         static_assert(sizeof...(args) == 4);
         return set_flag<flags::N>(set_flag<flags::Z>(set_flag<flags::C>(set_flag<flags::V>(cpsr, list[3]), list[2]), list[1]), list[0]);
     }
+#endif
 }
+
+// theres 1 cpsr and 5 spsr
+union arm7tdmi_psr {
+    struct {
+        // condition flags
+        u32 N : 1; // negative, less than
+        u32 Z : 1; // zero
+        u32 C : 1; // carry, borrow, extend
+        u32 V : 1; // overflow
+        
+        // reserved
+        u32 reserved : 20;
+        
+        // control
+        u32 I : 1; // IRQ disable (1=off,0=on)
+        u32 F : 1; // FIQ disable (1=off,0=on)
+        u32 T : 1; // state bit (1=thumb,0=thumb)
+        u32 M : 5; // mode
+    };
+    u32 word;
+};
+
+struct psr {
+    u32 value;
+
+    // [[nodiscard]]
+    // constexpr operator auto() const noexcept {
+    //     return this->value;
+    // }
+
+    // constexpr auto operator=(const u32 v) noexcept {
+    //     return this->value = v;
+    // }
+
+    constexpr auto set_state(const state new_state) noexcept {
+        this->value = (this->value & 0b1111'1111'1111'1111'1111'1111'1101'1111) | (static_cast<u32>(new_state) << 5);
+    }
+
+    [[nodiscard]]
+    constexpr auto get_state() const noexcept {
+        return static_cast<state>(bit::is_set<5>(this->value));
+    }
+
+    constexpr auto is_state(const state wanted) const noexcept {
+        return this->get_state() == wanted;
+    }
+
+    [[nodiscard]]
+    constexpr auto get_mode() const noexcept {
+        return static_cast<mode>(this->value & 0x1F);
+    }
+
+    constexpr auto set_mode(const mode new_mode) noexcept {
+        this->value = (this->value & 0b1111'1111'1111'1111'1111'1111'1110'0000) | static_cast<u32>(new_mode);
+    }
+
+    [[nodiscard]]
+    constexpr auto is_mode(const mode wanted) const noexcept {
+        return this->get_mode() == wanted;
+    }
+
+    template <flags flag> [[nodiscard]]
+    constexpr auto get_flag() const noexcept {
+        return is_flag_set<flag>(this->value);
+    }
+
+    template <flags flag>
+    constexpr auto set_flag(const bool on) noexcept {
+        set_flag<flag>(this->value, on);
+    }
+};
+
+// in arm state, 16 gReg are visible and 1-2 sReg
+struct arm7tdmi {
+    static constexpr auto REGISTER_SP_INDEX = 13;
+    static constexpr auto REGISTER_LR_INDEX = 14;
+    static constexpr auto REGISTER_PC_INDEX = 15;
+
+    // r14 - sub link reg, gets set to r15 during branch and links
+    // r15 - pc, bits 0-1 are zero in arm state, bit-0 is zero in thumb
+    // r16 - cpsr (current program status reg).
+    std::array<u32, 16> registers;
+    
+    psr cpsr;
+    psr spsr;
+
+    std::array<u32, 7> banked_user;
+    // psr spsr_user;
+    std::array<u32, 7> banked_fiq;
+    psr spsr_fiq;
+    std::array<u32, 2> banked_supervisor;
+    psr spsr_supervisor;
+    std::array<u32, 2> banked_abort;
+    psr spsr_abort;
+    std::array<u32, 2> banked_irq;
+    psr spsr_irq;
+    std::array<u32, 2> banked_undefined;
+    psr spsr_undefined;
+
+    bool barrel_carry : 1;
+
+    [[nodiscard]]
+    constexpr auto get_sp() const noexcept {
+        return this->registers[REGISTER_SP_INDEX];
+    }
+
+    constexpr auto set_sp(const u16 v) noexcept {
+        this->registers[REGISTER_SP_INDEX] = v;
+    }
+
+    [[nodiscard]]
+    constexpr auto get_lr() const noexcept {
+        return this->registers[REGISTER_LR_INDEX];
+    }
+
+    constexpr auto set_lr(const u16 v) noexcept {
+        this->registers[REGISTER_LR_INDEX] = v;
+    }
+
+    [[nodiscard]]
+    constexpr auto get_pc() const noexcept {
+        return this->registers[REGISTER_PC_INDEX];
+    }
+
+    constexpr auto set_pc(const u16 v) noexcept {
+        this->registers[REGISTER_PC_INDEX] = v;
+    }
+
+    [[nodiscard]]
+    constexpr auto get_cpsr() const noexcept {
+        return this->cpsr.value;
+    }
+
+    constexpr auto set_cpsr(const u16 v) noexcept {
+        this->cpsr.value = v;
+    }
+
+    constexpr auto switch_mode(const mode new_mode) noexcept {
+        const auto current_mode = this->cpsr.get_mode();
+        // if the modes are the same, don't switch...
+        if (new_mode == current_mode) {
+            return;
+        }
+
+        const auto store_func = [new_mode, this](auto& dst) {
+            if (new_mode == mode::FIQ) {
+                for (size_t i = 0; i < 5; ++i) {
+                    this->banked_user[i] = this->registers[8 + i];
+                }
+            }
+
+            const auto offset = 15 - dst.size();
+            for (size_t i = 0; i < dst.size(); ++i) {
+                dst[i] = this->registers[offset + i];
+            }
+        };
+
+        const auto load_func = [this](const auto& src) {
+            const auto offset = 15 - src.size();
+            for (size_t i = 0; i < src.size(); ++i) {
+                this->registers[offset + i] = src[i];
+            }
+        };
+
+        // store the registers in banks
+        switch (current_mode) {
+            case mode::USER: case mode::SYSTEM:
+                store_func(this->banked_user);
+                // this->spsr_user = this->spsr;
+                break;
+
+            case mode::FIQ:
+                store_func(this->banked_fiq);
+                this->spsr_fiq = this->spsr;
+                break;
+
+            case mode::IRQ:
+                store_func(this->banked_irq);
+                this->spsr_irq = this->spsr;
+                break;
+
+            case mode::SUPERVISOR:
+                store_func(this->banked_supervisor);
+                this->spsr_supervisor = this->spsr;
+                break;
+
+            case mode::ABORT:
+                store_func(this->banked_abort);
+                this->spsr_abort = this->spsr;
+                break;
+
+            case mode::UNDEFINED:
+                store_func(this->banked_undefined);
+                this->spsr_undefined = this->spsr;
+                break;
+        }
+
+        // load the registers from banks
+        switch (new_mode) {
+            case mode::USER: case mode::SYSTEM:
+                load_func(this->banked_user);
+                // this->spsr = this->spsr_user;
+                break;
+
+            case mode::FIQ:
+                load_func(this->banked_fiq);
+                this->spsr = this->spsr_fiq;
+                break;
+
+            case mode::IRQ:
+                load_func(this->banked_irq);
+                this->spsr = this->spsr_irq;
+                break;
+
+            case mode::SUPERVISOR:
+                load_func(this->banked_supervisor);
+                this->spsr = this->spsr_supervisor;
+                break;
+
+            case mode::ABORT:
+                load_func(this->banked_abort);
+                this->spsr = this->spsr_abort;
+                break;
+
+            case mode::UNDEFINED:
+                load_func(this->banked_undefined);
+                this->spsr = this->spsr_undefined;
+                break;
+        }
+
+        // finally update the new mode
+        this->cpsr.set_mode(new_mode);
+    }
+};
+
+constexpr auto my_size = sizeof(arm7tdmi);
+static_assert(sizeof(arm7tdmi) == 184);
+
+void arm_decode_test(u32 op);
+void thumb_decode_test(u16 op);
 
 } // namespace arm7tdmi

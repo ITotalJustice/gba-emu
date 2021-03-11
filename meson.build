@@ -18,6 +18,7 @@ source = files([
     'src/arm7tdmi/tests/test_arm_data_processing.cpp',
     'src/arm7tdmi/tests/test_arm_multiply.cpp',
     'src/arm7tdmi/tests/test_common.cpp',
+    'src/arm7tdmi/tests/test_register_banking.cpp',
 ])
 
 includes = include_directories([

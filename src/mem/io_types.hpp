@@ -6,6 +6,8 @@
 #include <cassert>
 #include <stdexcept>
 
+namespace gba::mem {
+
 using u8 = std::uint8_t;
 using u16 = std::uint16_t;
 using u32 = std::uint32_t;
@@ -14,8 +16,6 @@ using s8 = std::int8_t;
 using s16 = std::int16_t;
 using s32 = std::int32_t;
 using s64 = std::int64_t;
-
-namespace gba::mem {
 
 // NOTE:
 // im not sure how to approach defining io registers.
@@ -39,23 +39,6 @@ namespace gba::mem {
 // this way, read and write full value will be fast as no shifting, and accessing
 // each bitfield becomes an inlined function, which is just a mask / shift
 // which is what the compiler should do anyway with actual bitfields.
-
-// inheriting from this seems to make read and write non-constexpr
-// as it fails with static_asserts...
-template <typename T>
-struct RegBaseRW {
-    constexpr virtual ~RegBaseRW() = default;
-
-    constexpr virtual auto read() const -> T {
-        return this->value;
-    }
-
-    constexpr virtual auto write(const u16 v) -> void {
-        this->value = v;
-    }
-
-    T value;
-};
 
 #define GENERATE_GET_SET_FUNC(bit_v, name, value) \
     [[nodiscard]] \
@@ -270,7 +253,6 @@ struct BG0HOFS {
         return this->value;
     }
 
-    [[nodiscard]]
     constexpr auto set_offset(const u16 v) noexcept {
         this->value = v;
     }
