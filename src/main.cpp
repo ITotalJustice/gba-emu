@@ -1,11 +1,20 @@
 #include "arm7tdmi/arm7tdmi.hpp"
 #include "mem/memory_map.hpp"
 #include "mem/io_types.hpp"
-
-#include <stdio.h>
-#include <assert.h>
-#include <array>
 #include "bit.hpp"
+#include "cart/rom.hpp"
+
+#include <cstdio>
+#include <cassert>
+#include <array>
+
+#include <iostream>
+#include <bitset>
+#include <string_view>
+#include <fstream>
+#include <vector>
+#include <optional>
+#include <span>
 
 #ifdef TEST_DECODING
 #include "extra/gen_arm_data_process_table/test.h"
@@ -155,28 +164,83 @@ void format04_test() {
     }
 }
 
-#include <iostream>
-#include <bitset>
-#include <cstring>
+enum class save_type {
+    EEPROM,
+    SRAM,
+    FLASH,
+    FLASH512,
+    FLASH1M
+};
 
-int main() {
-    // 0b0000'0000'0000'0000'0000'0000'0000'0000;
-    // 0b00'1'0000'0'0000;
-    // 0b00'1'0000'1'1111;
-    // 1 + 2 + 4 + 8 + 16 
+auto load_rom(const std::string_view path) -> std::optional<std::vector<std::uint8_t>> {
+    std::ifstream fs{path.data(), std::ios_base::binary};
+    
+    if (fs.good()) {
+        fs.seekg(0, std::ios_base::end);
+        const auto size = fs.tellg();
+        fs.seekg(0, std::ios_base::beg);
 
-    // 0b0000'1111'1111'0000'0000'0000'1111'0000;
-    // uint32_t opcode = 0b0000'1111'1111'0000'0000'0000'1111'0000;
-    // uint32_t result = ((opcode >> 16) & 0xFF0) | ((opcode >> 4) & 0xF);
-    uint32_t op = 0b0000'001'1000'0'00000000000000000000;
-    // std::cout << "0b" << std::bitset<32>(op) << '\n';
-    // std::cout <<"0b" << std::bitset<12>((((op >> 16) & 0xFF0) | ((op >> 4) & 0xF)) & 0xFFF) << '\n';
-    printf("0x%03X\n", (((op >> 16) & 0xFF0) | ((op >> 4) & 0xF)) & 0xFFF);
+        std::vector<std::uint8_t> data;
+        data.resize(size);
+        
+        fs.read(reinterpret_cast<char*>(data.data()), data.size());
+        return data;
+    }
 
-    const uint32_t op2 = 0b1000'0000'0000'0000'0000'0000'0000'0000;
+    return std::nullopt;
+}
 
-    const uint32_t result = static_cast<uint32_t>(static_cast<int>(op2) >> 4);
-    std::cout << "0b" << std::bitset<32>(result) << '\n';
+// cannot be constexpr because of the cast to string_view sadly...
+auto find_rom_save_type(const std::span<const std::uint8_t> data) -> std::optional<save_type> {
+    // we need to parse the data as a string.
+    const std::string_view sv{reinterpret_cast<const char*>(data.data()), data.size()};
+
+    // these are the string IDS for the save type
+    // all ID's are followed by 'nnn' which is the version number.
+    // the version number is not needed, only the string to be found.
+    constexpr std::array<std::pair<std::string_view, save_type>, 5> tokens{{
+        { "EEPROM_V", save_type::EEPROM },
+        { "SRAM_V", save_type::SRAM },
+        { "FLASH_V", save_type::FLASH },
+        { "FLASH512_V", save_type::FLASH512 },
+        { "FLASH1M_V", save_type::FLASH1M }
+    }};
+
+    for (const auto [token, type] : tokens) {
+        if (const auto it = sv.find(token); it != sv.npos) {
+            // add 3 for the version num. this is optional!
+            std::cout << "FOUND: " << sv.substr(it, token.size() + 3) << '\n';
+            return type;
+        }
+    }
+
+    // failed to find save type string...
+    return std::nullopt;
+}
+
+auto print_rom_header(const std::span<const std::uint8_t> data) {
+    const gba::rom::header header{data};
+    const auto game_title = header.get_game_title();
+    const auto game_code = header.get_game_code();
+    const auto maker_code = header.get_maker_code();
+
+    std::cout << "\nGame Title: " << game_title;
+    std::cout << "\nGame Code: " << game_code;
+    std::cout << "\nMaker Code: " << maker_code << '\n';
+
+    std::cout << "Valid Checksum : " << std::boolalpha << header.verify_checksum() << '\n';
+    std::cout << "Valid Fixed Value : " << std::boolalpha << header.verify_fixed_value() << '\n';
+}
+
+int main(int argc, char** argv) {
+
+    // test rom loading and save type detection
+    if (argc > 1) {
+        if (auto rom_data = load_rom(argv[1])) {
+            find_rom_save_type(*rom_data);
+            print_rom_header(*rom_data);
+        }
+    }
 
     // for (uint32_t i = 0; i < UINT32_MAX; ++i) {
     //     if (test(i) != 0) {
@@ -211,22 +275,6 @@ int main() {
     // format04_test();
     // arm7tdmi::thumb_decode_test(0x40A9);
     // arm_decode_test(0xE0214392);
-
-    // format05_test();
-    // format06_test();
-    // format07_test();
-    // format08_test();
-    // format09_test();
-    // format10_test();
-    // format11_test();
-    // format12_test();
-    // format13_test();
-    // format14_test();
-    // format15_test();
-    // format16_test();
-    // format17_test();
-    // format18_test();
-    // format19_test();
 
     return 0;
 }

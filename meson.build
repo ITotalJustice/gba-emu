@@ -10,6 +10,8 @@ dependencies = [
 
 source = files([
     'src/main.cpp',
+    
+    # cpu
     'src/arm7tdmi/thumb/thumb.cpp',
     'src/arm7tdmi/arm/arm.cpp',
     #'src/arm7tdmi/arm/data_processing.cpp',
@@ -19,6 +21,9 @@ source = files([
     'src/arm7tdmi/tests/test_arm_multiply.cpp',
     'src/arm7tdmi/tests/test_common.cpp',
     'src/arm7tdmi/tests/test_register_banking.cpp',
+    
+    # cart
+    'src/cart/tests/test_header_checksum.cpp',
 ])
 
 includes = include_directories([
@@ -54,6 +59,9 @@ cppflags = [
 ]
 
 linkflags = [
+    # this is needed for <execution> algorithms
+    # '-ltbb',
+
     # '-Wl,-subsystem,windows',
     # '-s',
 ]
