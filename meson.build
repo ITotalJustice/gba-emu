@@ -21,6 +21,7 @@ source = files([
     'src/arm7tdmi/tests/test_arm_multiply.cpp',
     'src/arm7tdmi/tests/test_common.cpp',
     'src/arm7tdmi/tests/test_register_banking.cpp',
+    'src/arm7tdmi/tests/test_thumb_load_store.cpp',
 
     'src/mem/tests/test_constexpr_mem.cpp',
     
