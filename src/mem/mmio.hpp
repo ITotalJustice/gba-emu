@@ -73,6 +73,8 @@ struct MMIO {
 
     // helpers for read / write arrays.
     // todo: add requires or static_assert for type (u8, u16, u32...)
+    // todo: check if host system endian matters here
+    // if so, if constexpr (std::endian == little) { ... } else { ... }
     template <typename T>
     constexpr auto read_array(std::span<const u8> array, const u32 addr) -> T {
         if constexpr(sizeof(T) == sizeof(u8)) { // u8
@@ -90,7 +92,7 @@ struct MMIO {
             const auto lo_word_hi = array[(addr + 2)];
             const auto lo_word_lo = array[(addr + 3)];
 
-            return (hi_word_hi << 24) | (hi_word_lo << 16) | (lo_word_hi << 8) | lo_word_lo;
+            return (lo_word_lo << 24) | (lo_word_hi << 16) | (hi_word_lo << 8) | hi_word_hi;
         }
     }
 

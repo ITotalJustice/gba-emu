@@ -35,9 +35,9 @@ struct Gba {
 constexpr auto compiletime_test() {
     constexpr auto func = []() {
         Gba<gba::mem::MMIO> Gba{};
-        Gba.mem.write<u8>(Gba.mem.IWRAM_REGION_START, 69);
-        const auto result = Gba.mem.read<u8>(Gba.mem.IWRAM_REGION_START);
-        return result == 69;
+        Gba.mem.write<u32>(Gba.mem.IWRAM_REGION_START, 0xFF'00'69'FF);
+        const auto result = Gba.mem.read<u32>(Gba.mem.IWRAM_REGION_START);
+        return result == 0xFF'00'69'FF;
     };
 
     static_assert(func());
