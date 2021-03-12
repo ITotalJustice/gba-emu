@@ -18,6 +18,22 @@ using s16 = std::int16_t;
 using s32 = std::int32_t;
 using s64 = std::int64_t;
 
+template <typename T>
+consteval auto get_mask() -> T {
+    if constexpr(sizeof(T) == sizeof(u8)) {
+        return 0xFF;
+    }
+    if constexpr(sizeof(T) == sizeof(u16)) {
+        return 0xFF'FF;
+    }
+    if constexpr(sizeof(T) == sizeof(u32)) {
+        return 0xFF'FF'FF'FF;
+    }
+    if constexpr(sizeof(T) == sizeof(u64)) {
+        return 0xFF'FF'FF'FF'FF'FF'FF'FF;
+    }
+}
+
 constexpr u32 rotr(const u32 value, const u32 shift) {
 // on arm, ror is an actual instruction, however i am not sure how to force
 // gcc to generate a ror without using instrinsics.
@@ -68,19 +84,10 @@ constexpr T set(const T value, const bool on) {
 
     static_assert(bit < bit_width, "bit value out of bounds!");
 
-    constexpr auto get_mask = [bit_width]() -> u64 {
-        switch (bit_width) {
-            case 8:  return 0xFF;
-            case 16: return 0xFF'FF;
-            case 32: return 0xFF'FF'FF'FF;
-            case 64: return 0xFF'FF'FF'FF'FF'FF'FF'FF;
-        }
-    };
-
     // create a mask with all bits set apart from THE `bit`
     // this allows toggling the bit.
     // if on = true, the bit is set, else nothing is set
-    constexpr auto mask = get_mask() & (~(1 << bit));
+    constexpr auto mask = get_mask<T>() & (~(1 << bit));
 
     return (value & mask) | (on << bit);
 }
@@ -107,7 +114,11 @@ static_assert(
     // simple 24-bit asr
     bit::sign_extend<24>(0b1100'1111'1111'1111'1111'1111) == 0b1111'1111'1100'1111'1111'1111'1111'1111 &&
     // set the sign-bit to bit 1, then asr 31-bits
-    bit::sign_extend<1>(0b0001) == 0b1111'1111'1111'1111'1111'1111'1111'1111,
+    bit::sign_extend<1>(0b0001) == 0b1111'1111'1111'1111'1111'1111'1111'1111 &&
+    // this is used in thumb ldr halword sign
+    bit::sign_extend<16>(0b0000'0000'1110'0000'1111'1111'1111'1111) == 0b1111'1111'1111'1111'1111'1111'1111'1111 &&
+    // same as above but no sign
+    bit::sign_extend<16>(0b0000'0000'1110'0000'0111'1111'1111'1111) == 0b0000'0000'0000'0000'0111'1111'1111'1111,
     "sign_extend is broken!"
 );
 
