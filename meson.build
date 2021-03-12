@@ -21,6 +21,8 @@ source = files([
     'src/arm7tdmi/tests/test_arm_multiply.cpp',
     'src/arm7tdmi/tests/test_common.cpp',
     'src/arm7tdmi/tests/test_register_banking.cpp',
+
+    'src/mem/tests/test_constexpr_mem.cpp',
     
     # cart
     'src/cart/tests/test_header_checksum.cpp',
@@ -50,10 +52,9 @@ cflags = [
 # 0b0000'0000'0000'0000'0000'0000
 cppflags = [
     '-std=gnu++20',
+    # gcc-11
     # '-std=gnu++2b',
-    # not sure about this because the codebase will still be c-style
     '-Wuseless-cast',
-    # not going to use classes..., but just in case i do i'll leave this here
     '-fdevirtualize-at-ltrans',
     '-Wsuggest-final-types',
 ]

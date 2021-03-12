@@ -234,6 +234,11 @@ struct BGxCNT {
     }
 };
 
+using BG0CNT = BGxCNT<0>;
+using BG1CNT = BGxCNT<1>;
+using BG2CNT = BGxCNT<2>;
+using BG3CNT = BGxCNT<3>;
+
 // LCD I/O BG Scrolling
 // SOURCE: https://problemkaputt.de/gbatek.htm#lcdiobgscrolling
 struct BG0HOFS {
@@ -265,7 +270,7 @@ using BG1VOFS = BG0HOFS;
 using BG2HOFS = BG0HOFS;
 using BG2VOFS = BG0HOFS;
 using BG3HOFS = BG0HOFS;
-using BG4VOFS = BG0HOFS;
+using BG3VOFS = BG0HOFS;
 
 constexpr void testing() {
     constexpr auto func = [](){

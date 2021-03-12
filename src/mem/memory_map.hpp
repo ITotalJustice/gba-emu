@@ -50,7 +50,7 @@ void map1(const u32 addr) {
             break;
         case 0x07000400 ... 0x07FFFFFF:   // Not used
             break;
-        
+    
     // External Memory (Game Pak)
         case 0x08000000 ... 0x09FFFFFF:   // Game Pak ROM/FlashROM (max 32MB) - Wait State 0
             break;

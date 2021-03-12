@@ -181,9 +181,9 @@ constexpr Test arm_mvn(const u32 cpsr, const u32 op1, const u32 op2, const bool 
 
 // bitwise and
 template <flags_cond flag>
-void arm_and(arm7tdmi& arm, const u32 op1, const u32 op2, const u8 rd) {
+void arm_and(arm7tdmi& arm, const u32 op1, const u32 op2, const u8 rd, const bool barrel_carry) {
     const auto [result, cpsr] = arm_and2<flag>(
-        arm.registers[16], op1, op2, arm.barrel_carry
+        arm.registers[16], op1, op2, barrel_carry
     );
     arm.registers[rd] = result;
     arm.registers[16] = cpsr;
@@ -191,9 +191,9 @@ void arm_and(arm7tdmi& arm, const u32 op1, const u32 op2, const u8 rd) {
 
 // bitwise exclusive or
 template <flags_cond flag>
-void arm_eor(arm7tdmi& arm, const u32 op1, const u32 op2, const u8 rd) {
+void arm_eor(arm7tdmi& arm, const u32 op1, const u32 op2, const u8 rd, const bool barrel_carry) {
     const auto [result, cpsr] = arm_eor<flag>(
-        arm.registers[16], op1, op2, arm.barrel_carry
+        arm.registers[16], op1, op2, barrel_carry
     );
     arm.registers[rd] = result;
     arm.registers[16] = cpsr;
@@ -201,9 +201,9 @@ void arm_eor(arm7tdmi& arm, const u32 op1, const u32 op2, const u8 rd) {
 
 // bitwise or
 template <flags_cond flag>
-void arm_orr(arm7tdmi& arm, const u32 op1, const u32 op2, const u8 rd) {
+void arm_orr(arm7tdmi& arm, const u32 op1, const u32 op2, const u8 rd, const bool barrel_carry) {
     const auto [result, cpsr] = arm_orr<flag>(
-        arm.registers[16], op1, op2, arm.barrel_carry
+        arm.registers[16], op1, op2, barrel_carry
     );
     arm.registers[rd] = result;
     arm.registers[16] = cpsr;
@@ -211,27 +211,27 @@ void arm_orr(arm7tdmi& arm, const u32 op1, const u32 op2, const u8 rd) {
 
 // bitwise and
 template <flags_cond flag>
-void arm_tst(arm7tdmi& arm, const u32 op1, const u32 op2, const u8 rd) {
+void arm_tst(arm7tdmi& arm, const u32 op1, const u32 op2, const u8 rd, const bool barrel_carry) {
     const auto [_, cpsr] = arm_tst<flag>(
-        arm.registers[16], op1, op2, arm.barrel_carry
+        arm.registers[16], op1, op2, barrel_carry
     );
     arm.registers[16] = cpsr;
 }
 
 // bitwise eor
 template <flags_cond flag>
-void arm_teq(arm7tdmi& arm, const u32 op1, const u32 op2, const u8 rd) {
+void arm_teq(arm7tdmi& arm, const u32 op1, const u32 op2, const u8 rd, const bool barrel_carry) {
     const auto [_, cpsr] = arm_teq<flag>(
-        arm.registers[16], op1, op2, arm.barrel_carry
+        arm.registers[16], op1, op2, barrel_carry
     );
     arm.registers[16] = cpsr;
 }
 
 // bitwise or
 template <flags_cond flag>
-void arm_bic(arm7tdmi& arm, const u32 op1, const u32 op2, const u8 rd) {
+void arm_bic(arm7tdmi& arm, const u32 op1, const u32 op2, const u8 rd, const bool barrel_carry) {
     const auto [result, cpsr] = arm_bic<flag>(
-        arm.registers[16], op1, op2, arm.barrel_carry
+        arm.registers[16], op1, op2, barrel_carry
     );
     arm.registers[rd] = result;
     arm.registers[16] = cpsr;
@@ -239,9 +239,9 @@ void arm_bic(arm7tdmi& arm, const u32 op1, const u32 op2, const u8 rd) {
 
 // bitwise or
 template <flags_cond flag>
-void arm_mov(arm7tdmi& arm, const u32 op1, const u32 op2, const u8 rd) {
+void arm_mov(arm7tdmi& arm, const u32 op1, const u32 op2, const u8 rd, const bool barrel_carry) {
     const auto [result, cpsr] = arm_mov<flag>(
-        arm.registers[16], op1, op2, arm.barrel_carry
+        arm.registers[16], op1, op2, barrel_carry
     );
     arm.registers[rd] = result;
     arm.registers[16] = cpsr;
@@ -249,9 +249,9 @@ void arm_mov(arm7tdmi& arm, const u32 op1, const u32 op2, const u8 rd) {
 
 // bitwise or
 template <flags_cond flag>
-void arm_mvn(arm7tdmi& arm, const u32 op1, const u32 op2, const u8 rd) {
+void arm_mvn(arm7tdmi& arm, const u32 op1, const u32 op2, const u8 rd, const bool barrel_carry) {
     const auto [result, cpsr] = arm_mvn<flag>(
-        arm.registers[16], op1, op2, arm.barrel_carry
+        arm.registers[16], op1, op2, barrel_carry
     );
     arm.registers[rd] = result;
     arm.registers[16] = cpsr;

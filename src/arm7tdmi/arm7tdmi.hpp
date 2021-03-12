@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../bit.hpp"
+#include "../mem/mmio.hpp"
 
 #include <cstdint>
 #include <array>
@@ -439,7 +440,7 @@ struct arm7tdmi {
     std::array<u32, 2> banked_undefined;
     psr spsr_undefined;
 
-    bool barrel_carry : 1;
+    gba::mem::MMIO mmio;
 
     [[nodiscard]]
     constexpr auto get_sp() const noexcept {
@@ -576,7 +577,8 @@ struct arm7tdmi {
 };
 
 constexpr auto my_size = sizeof(arm7tdmi);
-static_assert(sizeof(arm7tdmi) == 184);
+// static_assert(sizeof(arm7tdmi) == 180);
+static_assert(sizeof(arm7tdmi) == 34015444UL);
 
 void arm_decode_test(u32 op);
 void thumb_decode_test(u16 op);
