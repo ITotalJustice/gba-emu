@@ -17,6 +17,7 @@
 #include <vector>
 #include <optional>
 #include <span>
+#include <memory>
 
 #ifdef TEST_DECODING
 #include "extra/gen_arm_data_process_table/test.h"
@@ -244,9 +245,7 @@ int main(int argc, char** argv) {
         }
     }
 
-    int neg = -5;
-    int result = (~neg) + 1;
-    printf("value: %d\n", result);
+    // auto arm = std::make_unique<arm7tdmi::arm7tdmi>();
 
     // for (uint32_t i = 0; i < UINT32_MAX; ++i) {
     //     if (test(i) != 0) {

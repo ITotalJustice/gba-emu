@@ -37,12 +37,4 @@ constexpr void instruction_mov_hi(arm7tdmi& arm, const u8 rs, const u8 rd) {
 
 // TODO: BX
 
-constexpr void instruction_ldr_pc_relative(arm7tdmi& arm, const u8 rd, const u8 word8) {
-    const u32 offset = word8 << 2;
-    // mask lower 2-bits to ensure the addr is word-aligned
-    const u32 addr = (arm.get_pc() & 0xFF'FF'FF'FC) + offset;
-    // load value from mem [addr] into reg[rd];
-    (void)rd;
-}
-
 } // namespace arm7tdmi::thumb
