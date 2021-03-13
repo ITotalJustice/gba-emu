@@ -24,6 +24,7 @@ source = files([
     'src/arm7tdmi/tests/test_thumb_load_store.cpp',
     'src/arm7tdmi/tests/test_thumb_branch.cpp',
     'src/arm7tdmi/tests/test_thumb_alu.cpp',
+    'src/arm7tdmi/tests/test_thumb_push_pop.cpp',
 
     'src/mem/tests/test_constexpr_mem.cpp',
     
@@ -50,9 +51,10 @@ cflags = [
     '-Wshadow',
     '-Wfatal-errors',
     '-Wdouble-promotion',
+    '-Wframe-larger-than=100KB',
     # '-Wno-format',
 ]
-# 0b0000'0000'0000'0000'0000'0000
+
 cppflags = [
     '-std=gnu++20',
     # gcc-11

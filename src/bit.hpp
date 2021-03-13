@@ -71,6 +71,12 @@ constexpr bool is_set(const T value, const u32 bit) {
 //     return value | (on << bit);
 // }
 
+template <typename T> [[nodiscard]]
+constexpr T unset(const T value, const u32 bit) {
+    assert(bit < (sizeof(T) * 8) && "bit value out of bounds!");
+    return value & (~(1 << bit));
+}
+
 // compile-time bit-size checked checked alternitives
 template <u8 bit, typename T> [[nodiscard]]
 constexpr bool is_set(const T value) {
@@ -90,6 +96,16 @@ constexpr T set(const T value, const bool on) {
     constexpr auto mask = get_mask<T>() & (~(1 << bit));
 
     return (value & mask) | (on << bit);
+}
+
+template <u8 bit, typename T> [[nodiscard]]
+constexpr T unset(const T value) {
+    constexpr auto bit_width = sizeof(T) * 8;
+    static_assert(bit < bit_width, "bit value out of bounds!");
+
+    constexpr auto mask = ~(1 << bit);
+
+    return value & mask;
 }
 
 static_assert(
