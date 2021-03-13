@@ -23,7 +23,7 @@ source = files([
     'src/arm7tdmi/tests/test_register_banking.cpp',
     'src/arm7tdmi/tests/test_thumb_load_store.cpp',
     'src/arm7tdmi/tests/test_thumb_branch.cpp',
-    'src/arm7tdmi/tests/test_thumb_add_sub.cpp',
+    'src/arm7tdmi/tests/test_thumb_alu.cpp',
 
     'src/mem/tests/test_constexpr_mem.cpp',
     

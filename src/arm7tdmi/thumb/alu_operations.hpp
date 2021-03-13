@@ -21,7 +21,79 @@ constexpr auto calc_v_flag(const u32 a, const u32 b, const u32 r) {
     return ((a & 0x80000000) == (b & 0x80000000)) && ((a & 0x80000000) != (r & 0x80000000));
 }
 
+enum class flags_cond {
+    no_modify,
+    modify,
+};
+
+// these instructions are used by taking in different params
+// a is alwys the left-side param.
+// so for sub(a, b) would be { result = (a - b) };
+template <flags_cond cond>
+constexpr void instruction_cmp_generic(arm7tdmi& arm, const u32 a, const u32 b) {
+    static_assert(cond == flags_cond::modify);
+    
+    const s64 result = a - b;
+
+    arm.cpsr.set_flags<ftest::nzcv>(
+        bit::is_set<31>(result),
+        result == 0,
+        result < 0,
+        calc_v_flag(a, b, result)
+    );
+}
+
+template <flags_cond cond>
+constexpr auto instruction_add_generic(arm7tdmi& arm, const u8 rd, const u32 a, const u32 b) {
+    const u64 result = a + b;
+
+    if constexpr(cond == flags_cond::modify) {
+        arm.cpsr.set_flags<ftest::nzcv>(
+            bit::is_set<31>(result),
+            (result & 0xFF'FF'FF'FFU) == 0,
+            result > 0xFF'FF'FF'FFU,
+            calc_v_flag(a, b, result)
+        );
+    }
+    
+    arm.registers[rd] = static_cast<u32>(result);
+}
+
+template <flags_cond cond>
+constexpr auto instruction_sub_generic(arm7tdmi& arm, const u8 rd, const u32 a, const u32 b) {
+    const s64 result = a - b;
+
+    if constexpr(cond == flags_cond::modify) {
+        arm.cpsr.set_flags<ftest::nzcv>(
+            bit::is_set<31>(result),
+            result == 0,
+            result < 0,
+            calc_v_flag(a, b, result)
+        );
+    }
+    
+    arm.registers[rd] = static_cast<u32>(result);
+}
+
+template <flags_cond cond>
+constexpr void instruction_mov_generic(arm7tdmi& arm, const u8 rd, const u32 a) {
+    const auto result = a;
+
+    if constexpr(cond == flags_cond::modify) {
+        arm.cpsr.set_flags<ftest::nz>(
+            bit::is_set<31>(result),
+            result == 0
+        );
+    }
+
+    arm.registers[rd] = result;
+}
+
+// the rest of the instructions are normal alu ops
+
 constexpr void instruction_and(arm7tdmi& arm, const u8 rs, const u8 rd) {
+    assert(rs <= 7 && rd <= 7 && "not a lo register oprand!");
+    
     const auto result = arm.registers[rd] & arm.registers[rs];
     arm.cpsr.set_flags<ftest::nz>(
         bit::is_set<31>(result),
@@ -31,6 +103,8 @@ constexpr void instruction_and(arm7tdmi& arm, const u8 rs, const u8 rd) {
 }
 
 constexpr void instruction_eor(arm7tdmi& arm, const u8 rs, const u8 rd) {
+    assert(rs <= 7 && rd <= 7 && "not a lo register oprand!");
+
     const auto result = arm.registers[rd] ^ arm.registers[rs];
     arm.cpsr.set_flags<ftest::nz>(
         bit::is_set<31>(result),
@@ -40,6 +114,8 @@ constexpr void instruction_eor(arm7tdmi& arm, const u8 rs, const u8 rd) {
 }
 
 constexpr void instruction_lsl(arm7tdmi& arm, const u8 rs, const u8 rd) {
+    assert(rs <= 7 && rd <= 7 && "not a lo register oprand!");
+
     const auto [result, new_carry] = barrel::shift<barrel::type::lsl>(
         arm.registers[rd], arm.registers[rs] & 0xFF,
         arm.cpsr.get_flag<flags::C>()
@@ -55,6 +131,8 @@ constexpr void instruction_lsl(arm7tdmi& arm, const u8 rs, const u8 rd) {
 }
 
 constexpr void instruction_lsr(arm7tdmi& arm, const u8 rs, const u8 rd) {
+    assert(rs <= 7 && rd <= 7 && "not a lo register oprand!");
+
     const auto [result, new_carry] = barrel::shift<barrel::type::lsr>(
         arm.registers[rd], arm.registers[rs] & 0xFF,
         arm.cpsr.get_flag<flags::C>()
@@ -70,6 +148,8 @@ constexpr void instruction_lsr(arm7tdmi& arm, const u8 rs, const u8 rd) {
 }
 
 constexpr void instruction_asr(arm7tdmi& arm, const u8 rs, const u8 rd) {
+    assert(rs <= 7 && rd <= 7 && "not a lo register oprand!");
+
     const auto [result, new_carry] = barrel::shift<barrel::type::asr>(
         arm.registers[rd], arm.registers[rs] & 0xFF,
         arm.cpsr.get_flag<flags::C>()
@@ -85,36 +165,26 @@ constexpr void instruction_asr(arm7tdmi& arm, const u8 rs, const u8 rd) {
 }
 
 constexpr void instruction_adc(arm7tdmi& arm, const u8 rs, const u8 rd) {
-    const auto carry = arm.cpsr.get_flag<flags::C>();
-    // todo: check if the expression is 64-bit on 32-bit system
-    const u64 result = arm.registers[rd] + arm.registers[rs] + carry;
+    assert(rs <= 7 && rd <= 7 && "not a lo register oprand!");
 
-    arm.cpsr.set_flags<ftest::nzcv>(
-        bit::is_set<31>(result),
-        (result & 0xFF'FF'FF'FFU) == 0,
-        result > 0xFF'FF'FF'FFU,
-        calc_v_flag(arm.registers[rd], arm.registers[rs] + carry, result)
+    const auto carry = arm.cpsr.get_flag<flags::C>();
+    instruction_add_generic<flags_cond::modify>(arm, rd,
+        arm.registers[rd], arm.registers[rs] + carry
     );
-    
-    arm.registers[rd] = result & 0xFF'FF'FF'FFU;
 }
 
 constexpr void instruction_sbc(arm7tdmi& arm, const u8 rs, const u8 rd) {
-    const auto carry = arm.cpsr.get_flag<flags::C>();
-    // todo: check if the expression is 64-bit on 32-bit system
-    const s64 result = arm.registers[rd] - (arm.registers[rs] + carry);
+    assert(rs <= 7 && rd <= 7 && "not a lo register oprand!");
 
-    arm.cpsr.set_flags<ftest::nzcv>(
-        bit::is_set<31>(result),
-        result == 0,
-        result < 0,
-        calc_v_flag(arm.registers[rd], arm.registers[rs] + carry, result)
+    const auto carry = arm.cpsr.get_flag<flags::C>();
+    instruction_sub_generic<flags_cond::modify>(arm, rd,
+        arm.registers[rd], arm.registers[rs] + carry
     );
-    
-    arm.registers[rd] = result & 0xFF'FF'FF'FFU;
 }
 
 constexpr void instruction_ror(arm7tdmi& arm, const u8 rs, const u8 rd) {
+    assert(rs <= 7 && rd <= 7 && "not a lo register oprand!");
+
     const auto [result, new_carry] = barrel::shift<barrel::type::ror>(
         arm.registers[rd], arm.registers[rs] & 0xFF,
         arm.cpsr.get_flag<flags::C>()
@@ -131,6 +201,8 @@ constexpr void instruction_ror(arm7tdmi& arm, const u8 rs, const u8 rd) {
 
 // same as instruction_and but the result is discarded
 constexpr void instruction_tst(arm7tdmi& arm, const u8 rs, const u8 rd) {
+    assert(rs <= 7 && rd <= 7 && "not a lo register oprand!");
+
     const auto result = arm.registers[rd] & arm.registers[rs];
     arm.cpsr.set_flags<ftest::nz>(
         bit::is_set<31>(result),
@@ -139,6 +211,8 @@ constexpr void instruction_tst(arm7tdmi& arm, const u8 rs, const u8 rd) {
 }
 
 constexpr void instruction_neg(arm7tdmi& arm, const u8 rs, const u8 rd) {
+    assert(rs <= 7 && rd <= 7 && "not a lo register oprand!");
+    
     const u32 result = (~arm.registers[rs]) + 1; // same as -rs
 
     arm.cpsr.set_flags<ftest::nzcv>(
@@ -152,17 +226,16 @@ constexpr void instruction_neg(arm7tdmi& arm, const u8 rs, const u8 rd) {
 }
 
 constexpr void instruction_cmp(arm7tdmi& arm, const u8 rs, const u8 rd) {
-    const s64 result = arm.registers[rd] - arm.registers[rs];
+    assert(rs <= 7 && rd <= 7 && "not a lo register oprand!");
 
-    arm.cpsr.set_flags<ftest::nzcv>(
-        bit::is_set<31>(result),
-        result == 0,
-        result < 0,
-        calc_v_flag(arm.registers[rd], arm.registers[rs], result)
+    instruction_cmp_generic<flags_cond::modify>(
+        arm, arm.registers[rd], arm.registers[rs]
     );
 }
 
 constexpr void instruction_cmn(arm7tdmi& arm, const u8 rs, const u8 rd) {
+    assert(rs <= 7 && rd <= 7 && "not a lo register oprand!");
+
     const u64 result = arm.registers[rd] + arm.registers[rs];
 
     arm.cpsr.set_flags<ftest::nzcv>(
@@ -174,6 +247,8 @@ constexpr void instruction_cmn(arm7tdmi& arm, const u8 rs, const u8 rd) {
 }
 
 constexpr void instruction_orr(arm7tdmi& arm, const u8 rs, const u8 rd) {
+    assert(rs <= 7 && rd <= 7 && "not a lo register oprand!");
+
     const auto result = arm.registers[rd] | arm.registers[rs];
     arm.cpsr.set_flags<ftest::nz>(
         bit::is_set<31>(result),
@@ -183,6 +258,8 @@ constexpr void instruction_orr(arm7tdmi& arm, const u8 rs, const u8 rd) {
 }
 
 constexpr void instruction_mul(arm7tdmi& arm, const u8 rs, const u8 rd) {
+    assert(rs <= 7 && rd <= 7 && "not a lo register oprand!");
+
     const u64 result = arm.registers[rd] * arm.registers[rs];
 
     arm.cpsr.set_flags<ftest::nzcv>(
@@ -196,6 +273,8 @@ constexpr void instruction_mul(arm7tdmi& arm, const u8 rs, const u8 rd) {
 }
 
 constexpr void instruction_bic(arm7tdmi& arm, const u8 rs, const u8 rd) {
+    assert(rs <= 7 && rd <= 7 && "not a lo register oprand!");
+
     const auto result = arm.registers[rd] & (~arm.registers[rs]);
     arm.cpsr.set_flags<ftest::nz>(
         bit::is_set<31>(result),
@@ -205,6 +284,8 @@ constexpr void instruction_bic(arm7tdmi& arm, const u8 rs, const u8 rd) {
 }
 
 constexpr void instruction_mvn(arm7tdmi& arm, const u8 rs, const u8 rd) {
+    assert(rs <= 7 && rd <= 7 && "not a lo register oprand!");
+    
     const auto result = ~arm.registers[rs];
     arm.cpsr.set_flags<ftest::nz>(
         bit::is_set<31>(result),
@@ -213,8 +294,36 @@ constexpr void instruction_mvn(arm7tdmi& arm, const u8 rs, const u8 rd) {
     arm.registers[rd] = result;
 }
 
+// pass in the offset as u8 rather than s8 because we'd need to cast it
+// to an unsigned value anyway as left shift signed value is UB.
+constexpr auto instruction_add_sp(arm7tdmi& arm, const u8 offset) {
+    const auto shift_v = static_cast<s16>(bit::sign_extend<8>(offset << 1));
+    arm.set_sp(arm.get_sp() + shift_v);
+}
 
+constexpr void instruction_add_hi(arm7tdmi& arm, const u8 rs, const u8 rd) {  
+    assert((rs >= 8 || rd >= 8) && "no hi registers were passed!");
 
+    instruction_add_generic<flags_cond::no_modify>(
+        arm, rd, arm.registers[rd], arm.registers[rs]
+    );
+}
+
+constexpr void instruction_cmp_hi(arm7tdmi& arm, const u8 rs, const u8 rd) {
+    assert((rs >= 8 || rd >= 8) && "no hi registers were passed!");
+    
+    instruction_cmp_generic<flags_cond::modify>(
+        arm, arm.registers[rd], arm.registers[rs]
+    );
+}
+
+constexpr void instruction_mov_hi(arm7tdmi& arm, const u8 rs, const u8 rd) {  
+    assert((rs >= 8 || rd >= 8) && "no hi registers were passed!");
+
+    instruction_mov_generic<flags_cond::no_modify>(
+        arm, rd, arm.registers[rs]
+    );
+}
 
 
 constexpr auto test_and() {

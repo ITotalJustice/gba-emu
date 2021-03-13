@@ -1,4 +1,4 @@
-#include "../thumb/add_sub.hpp"
+#include "../thumb/alu_operations.hpp"
 
 namespace arm7tdmi::thumb {
 
