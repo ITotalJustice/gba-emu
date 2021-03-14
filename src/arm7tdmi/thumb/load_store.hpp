@@ -24,8 +24,8 @@ constexpr auto instruction_ldr(arm7tdmi& arm, const u32 a, const u32 b, const u8
 
     if constexpr(sign == sign_extend::yes) {
         static_assert(
-            sizeof(T) == sizeof(u16),
-            "only halfword (LDRSB, LDRSH) is supported for sign extended loads!"
+            sizeof(T) == sizeof(u8) || sizeof(T) == sizeof(u16),
+            "only byte OR halfword (LDRSB, LDRSH) is supported for sign extended loads!"
         );
 
         arm.registers[rd] = bit::sign_extend<16>(arm.registers[rd]);

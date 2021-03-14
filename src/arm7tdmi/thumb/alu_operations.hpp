@@ -33,12 +33,12 @@ template <flags_cond cond>
 constexpr void instruction_cmp_generic(arm7tdmi& arm, const u32 a, const u32 b) {
     static_assert(cond == flags_cond::modify);
     
-    const s64 result = a - b;
+    const auto result = a - b;
 
     arm.cpsr.set_flags<ftest::nzcv>(
         bit::is_set<31>(result),
         result == 0,
-        result < 0,
+        a < b,
         calc_v_flag(a, b, result)
     );
 }
@@ -61,13 +61,13 @@ constexpr auto instruction_add_generic(arm7tdmi& arm, const u8 rd, const u32 a, 
 
 template <flags_cond cond>
 constexpr auto instruction_sub_generic(arm7tdmi& arm, const u8 rd, const u32 a, const u32 b) {
-    const s64 result = a - b;
+    const auto result = a - b;
 
     if constexpr(cond == flags_cond::modify) {
         arm.cpsr.set_flags<ftest::nzcv>(
             bit::is_set<31>(result),
             result == 0,
-            result < 0,
+            a < b,
             calc_v_flag(a, b, result)
         );
     }
@@ -85,6 +85,51 @@ constexpr void instruction_mov_generic(arm7tdmi& arm, const u8 rd, const u32 a) 
             result == 0
         );
     }
+
+    arm.registers[rd] = result;
+}
+
+constexpr void instruction_lsl_generic(arm7tdmi& arm, const u32 value_to_shift, const u8 shift_v, const u8 rd) {
+    const auto [result, new_carry] = barrel::shift<barrel::type::lsl>(
+        value_to_shift, shift_v,
+        arm.cpsr.get_flag<flags::C>()
+    );
+
+    arm.cpsr.set_flags<ftest::nzc>(
+        bit::is_set<31>(result),
+        result == 0,
+        new_carry
+    );
+
+    arm.registers[rd] = result;
+}
+
+constexpr void instruction_lsr_generic(arm7tdmi& arm, const u32 value_to_shift, const u8 shift_v, const u8 rd) {
+    const auto [result, new_carry] = barrel::shift<barrel::type::lsr>(
+        value_to_shift, shift_v,
+        arm.cpsr.get_flag<flags::C>()
+    );
+
+    arm.cpsr.set_flags<ftest::nzc>(
+        bit::is_set<31>(result),
+        result == 0,
+        new_carry
+    );
+
+    arm.registers[rd] = result;
+}
+
+constexpr void instruction_asr_generic(arm7tdmi& arm, const u32 value_to_shift, const u8 shift_v, const u8 rd) {
+    const auto [result, new_carry] = barrel::shift<barrel::type::asr>(
+        value_to_shift, shift_v,
+        arm.cpsr.get_flag<flags::C>()
+    );
+
+    arm.cpsr.set_flags<ftest::nzc>(
+        bit::is_set<31>(result),
+        result == 0,
+        new_carry
+    );
 
     arm.registers[rd] = result;
 }
@@ -116,52 +161,31 @@ constexpr void instruction_eor(arm7tdmi& arm, const u8 rs, const u8 rd) {
 constexpr void instruction_lsl(arm7tdmi& arm, const u8 rs, const u8 rd) {
     assert(rs <= 7 && rd <= 7 && "not a lo register oprand!");
 
-    const auto [result, new_carry] = barrel::shift<barrel::type::lsl>(
+    instruction_lsl_generic(
+        arm, 
         arm.registers[rd], arm.registers[rs] & 0xFF,
-        arm.cpsr.get_flag<flags::C>()
+        rd
     );
-
-    arm.cpsr.set_flags<ftest::nzc>(
-        bit::is_set<31>(result),
-        result == 0,
-        new_carry
-    );
-
-    arm.registers[rd] = result;
 }
 
 constexpr void instruction_lsr(arm7tdmi& arm, const u8 rs, const u8 rd) {
     assert(rs <= 7 && rd <= 7 && "not a lo register oprand!");
 
-    const auto [result, new_carry] = barrel::shift<barrel::type::lsr>(
+    instruction_lsr_generic(
+        arm, 
         arm.registers[rd], arm.registers[rs] & 0xFF,
-        arm.cpsr.get_flag<flags::C>()
+        rd
     );
-
-    arm.cpsr.set_flags<ftest::nzc>(
-        bit::is_set<31>(result),
-        result == 0,
-        new_carry
-    );
-
-    arm.registers[rd] = result;
 }
 
 constexpr void instruction_asr(arm7tdmi& arm, const u8 rs, const u8 rd) {
     assert(rs <= 7 && rd <= 7 && "not a lo register oprand!");
 
-    const auto [result, new_carry] = barrel::shift<barrel::type::asr>(
+    instruction_asr_generic(
+        arm, 
         arm.registers[rd], arm.registers[rs] & 0xFF,
-        arm.cpsr.get_flag<flags::C>()
+        rd
     );
-
-    arm.cpsr.set_flags<ftest::nzc>(
-        bit::is_set<31>(result),
-        result == 0,
-        new_carry
-    );
-
-    arm.registers[rd] = result;
 }
 
 constexpr void instruction_adc(arm7tdmi& arm, const u8 rs, const u8 rd) {
@@ -325,6 +349,30 @@ constexpr void instruction_mov_hi(arm7tdmi& arm, const u8 rs, const u8 rd) {
     );
 }
 
+enum class shifted_reg_type {
+    lsl, lsr, asr
+};
+
+template <shifted_reg_type type>
+constexpr void instruction_move_shifted_reg(arm7tdmi& arm, const u8 offset5, const u8 rs, const u8 rd) {
+    assert(rs <= 7 && rd <= 7 && "not a lo register oprand!");
+
+    if constexpr(type == shifted_reg_type::lsl) {
+        instruction_lsl_generic(
+            arm, arm.registers[rs], offset5, rd
+        );
+    }
+    if constexpr(type == shifted_reg_type::lsr) {
+        instruction_lsr_generic(
+            arm, arm.registers[rs], offset5, rd
+        );
+    }
+    if constexpr(type == shifted_reg_type::asr) {
+        instruction_asr_generic(
+            arm, arm.registers[rs], offset5, rd
+        );
+    }
+}
 
 constexpr auto test_and() {
     constexpr auto func = []() {

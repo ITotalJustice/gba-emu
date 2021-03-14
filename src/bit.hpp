@@ -62,7 +62,7 @@ static_assert(
 template <typename T> [[nodiscard]]
 constexpr bool is_set(const T value, const u32 bit) {
     assert(bit < (sizeof(T) * 8) && "bit value out of bounds!");
-    return (value & (1 << bit)) > 0;
+    return (value & (1ULL << bit)) > 0;
 }
 
 // template <typename T> [[nodiscard]]
@@ -74,14 +74,14 @@ constexpr bool is_set(const T value, const u32 bit) {
 template <typename T> [[nodiscard]]
 constexpr T unset(const T value, const u32 bit) {
     assert(bit < (sizeof(T) * 8) && "bit value out of bounds!");
-    return value & (~(1 << bit));
+    return value & (~(1ULL << bit));
 }
 
 // compile-time bit-size checked checked alternitives
 template <u8 bit, typename T> [[nodiscard]]
 constexpr bool is_set(const T value) {
     static_assert(bit < (sizeof(T) * 8), "bit value out of bounds!");
-    return (value & (1 << bit)) > 0;
+    return (value & (1ULL << bit)) > 0;
 }
 
 template <u8 bit, typename T>
@@ -93,7 +93,7 @@ constexpr T set(const T value, const bool on) {
     // create a mask with all bits set apart from THE `bit`
     // this allows toggling the bit.
     // if on = true, the bit is set, else nothing is set
-    constexpr auto mask = get_mask<T>() & (~(1 << bit));
+    constexpr auto mask = get_mask<T>() & (~(1ULL << bit));
 
     return (value & mask) | (on << bit);
 }
@@ -103,7 +103,7 @@ constexpr T unset(const T value) {
     constexpr auto bit_width = sizeof(T) * 8;
     static_assert(bit < bit_width, "bit value out of bounds!");
 
-    constexpr auto mask = ~(1 << bit);
+    constexpr auto mask = ~(1ULL << bit);
 
     return value & mask;
 }
@@ -136,6 +136,45 @@ static_assert(
     // same as above but no sign
     bit::sign_extend<16>(0b0000'0000'1110'0000'0111'1111'1111'1111) == 0b0000'0000'0000'0000'0111'1111'1111'1111,
     "sign_extend is broken!"
+);
+
+template <u8 start, u8 end, typename T>
+consteval auto get_mask_range() -> T {
+    static_assert(start < end);
+    static_assert(end < (sizeof(T) * 8));
+
+    T result = 0;
+    for (auto bit = start; bit <= end; ++bit) {
+        result |= (1 << bit);
+    }
+
+    return result;
+}
+
+static_assert(
+    bit::get_mask_range<3, 5, u32>() == 0b111'000 &&
+    bit::get_mask_range<0, 2, u32>() == 0b000'111 &&
+    bit::get_mask_range<1, 5, u32>() == 0b111'110 &&
+    bit::get_mask_range<4, 5, u32>() == 0b110'000,
+    "bit::get_mask_range is broken!"
+);
+
+template <u8 start, u8 end, typename T>
+constexpr auto get_range(const T value) {
+    static_assert(start < end, "range is invalid!");
+    static_assert(end < (sizeof(T) * 8));
+
+    constexpr auto mask = get_mask_range<start, end, T>() >> start;
+
+    return (value >> start) & mask;
+}
+
+static_assert(
+    bit::get_range<3, 5, u32>(0b111'000) == 0b000'111 &&
+    bit::get_range<0, 2, u32>(0b000'010) == 0b000'010 &&
+    bit::get_range<1, 5, u32>(0b111'110) == 0b011'111 &&
+    bit::get_range<4, 5, u32>(0b110'000) == 0b000'011,
+    "bit::get_range is broken!"
 );
 
 } // namespace bit

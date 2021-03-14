@@ -355,59 +355,59 @@ struct psr {
 
     template <ftest flag>
     #if 1
-    constexpr u32 set_flags(const bool p1 = false, const bool p2 = false, const bool p3 = false, const bool p4 = false) {
+    constexpr auto set_flags(const bool p1 = false, const bool p2 = false, const bool p3 = false, const bool p4 = false) {
         if constexpr(flag == ftest::v) {
-            return (this->value & FLAG_V_MASK) | (p1 << FLAG_V_BIT);
+            this->value = (this->value & FLAG_V_MASK) | (p1 << FLAG_V_BIT);
         }
         if constexpr(flag == ftest::c) {
-            return (this->value & FLAG_C_MASK) | (p1 << FLAG_C_BIT);
+            this->value = (this->value & FLAG_C_MASK) | (p1 << FLAG_C_BIT);
         }
         if constexpr(flag == ftest::z) {
-            return (this->value & FLAG_Z_MASK) | (p1 << FLAG_Z_BIT);
+            this->value = (this->value & FLAG_Z_MASK) | (p1 << FLAG_Z_BIT);
         }
         if constexpr(flag == ftest::n) {
-            return (this->value & FLAG_N_MASK) | (p1 << FLAG_N_BIT);
+            this->value = (this->value & FLAG_N_MASK) | (p1 << FLAG_N_BIT);
         }
         if constexpr(flag == ftest::nz) {
-            return (this->value & 0b0011'1111'1111'1111'1111'1111'1111'1111) | (p1 << FLAG_N_BIT) | (p2 << FLAG_Z_BIT);
+            this->value = (this->value & 0b0011'1111'1111'1111'1111'1111'1111'1111) | (p1 << FLAG_N_BIT) | (p2 << FLAG_Z_BIT);
         }
         if constexpr(flag == ftest::nzc) {
-            return (this->value & 0b0001'1111'1111'1111'1111'1111'1111'1111) | (p1 << FLAG_N_BIT) | (p2 << FLAG_Z_BIT) | (p3 << FLAG_C_BIT);
+            this->value = (this->value & 0b0001'1111'1111'1111'1111'1111'1111'1111) | (p1 << FLAG_N_BIT) | (p2 << FLAG_Z_BIT) | (p3 << FLAG_C_BIT);
         }
         if constexpr(flag == ftest::nzcv) {
-            return (this->value & 0b0000'1111'1111'1111'1111'1111'1111'1111) | (p1 << FLAG_N_BIT) | (p2 << FLAG_Z_BIT) | (p3 << FLAG_C_BIT) | (p4 << FLAG_V_BIT);
+            this->value = (this->value & 0b0000'1111'1111'1111'1111'1111'1111'1111) | (p1 << FLAG_N_BIT) | (p2 << FLAG_Z_BIT) | (p3 << FLAG_C_BIT) | (p4 << FLAG_V_BIT);
         }
     #else
-    constexpr u32 set_flags(const auto ...args) {
+    constexpr auto set_flags(const auto ...args) {
         const std::array list{args...};
 
         if constexpr(flag == ftest::v) {
             static_assert(sizeof...(args) == 1);
-            return set_flag<flags::V>(this->value, list[0]);
+            this->value = set_flag<flags::V>(this->value, list[0]);
         }
         if constexpr(flag == ftest::c) {
             static_assert(sizeof...(args) == 1);
-            return set_flag<flags::C>(this->value, list[0]);
+            this->value = set_flag<flags::C>(this->value, list[0]);
         }
         if constexpr(flag == ftest::z) {
             static_assert(sizeof...(args) == 1);
-            return set_flag<flags::Z>(this->value, list[0]);
+            this->value = set_flag<flags::Z>(this->value, list[0]);
         }
         if constexpr(flag == ftest::n) {
             static_assert(sizeof...(args) == 1);
-            return set_flag<flags::N>(this->value, list[0]);
+            this->value = set_flag<flags::N>(this->value, list[0]);
         }
         if constexpr(flag == ftest::nz) {
             static_assert(sizeof...(args) == 2);
-            return set_flag<flags::N>(set_flag<flags::Z>(this->value, list[1]), list[0]);
+            this->value = set_flag<flags::N>(set_flag<flags::Z>(this->value, list[1]), list[0]);
         }
         if constexpr(flag == ftest::nzc) {
             static_assert(sizeof...(args) == 3);
-            return set_flag<flags::N>(set_flag<flags::Z>(set_flag<flags::C>(this->value, list[2]), list[1]), list[0]);
+            this->value = set_flag<flags::N>(set_flag<flags::Z>(set_flag<flags::C>(this->value, list[2]), list[1]), list[0]);
         }
         if constexpr(flag == ftest::nzcv) {
             static_assert(sizeof...(args) == 4);
-            return set_flag<flags::N>(set_flag<flags::Z>(set_flag<flags::C>(set_flag<flags::V>(this->value, list[3]), list[2]), list[1]), list[0]);
+            this->value = set_flag<flags::N>(set_flag<flags::Z>(set_flag<flags::C>(set_flag<flags::V>(this->value, list[3]), list[2]), list[1]), list[0]);
         }
     #endif
     }

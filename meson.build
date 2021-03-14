@@ -25,6 +25,7 @@ source = files([
     'src/arm7tdmi/tests/test_thumb_branch.cpp',
     'src/arm7tdmi/tests/test_thumb_alu.cpp',
     'src/arm7tdmi/tests/test_thumb_push_pop.cpp',
+    'src/arm7tdmi/tests/test_thumb_decode.cpp',
 
     'src/mem/tests/test_constexpr_mem.cpp',
     

@@ -12,6 +12,7 @@ constexpr auto instruction_cond_b(arm7tdmi& arm, const u8 cond, const s16 offset
 
     // check if we jump!
     if (test_cond(arm.get_cpsr(), cond) == true) {
+        // this might be UB, if so, do sign extend instead
         const auto shifted_offset = offset << 1;
         arm.set_pc(arm.get_pc() + shifted_offset);
     }

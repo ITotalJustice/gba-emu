@@ -19,7 +19,7 @@ void thumb_decode_test(u16 op) {
     // TODO: check if gcc / clang generate big jump table or
     // if else chain, hopefully jump table...
 
-    switch ((op >> 6) & 0x3FF) {
+    switch (bit::get_range<6, 15>(op)) {
     // [5.1]
         // LSL Rd, Rs, #Offset5
         case 0b000'00'00000 ... 0b000'00'11111:
@@ -268,15 +268,15 @@ void thumb_decode_test(u16 op) {
         case 0b011'0'0'00000 ... 0b011'0'0'11111:
             fputs("STR Rd, [Rb, #Imm]\n", stdout);
             break;
-
-        // LDR Rd, [Rb, #Imm]
+        
+        // STRB Rd, [Rb, #Imm]
         case 0b011'1'0'00000 ... 0b011'1'0'11111:
-            fputs("LDR Rd, [Rb, #Imm]\n", stdout);
+            fputs("STRB Rd, [Rb, #Imm]\n", stdout);
             break;
 
-        // STRB Rd, [Rb, #Imm]
+        // LDR Rd, [Rb, #Imm]
         case 0b011'0'1'00000 ... 0b011'0'1'11111:
-            fputs("STRB Rd, [Rb, #Imm]\n", stdout);
+            fputs("LDR Rd, [Rb, #Imm]\n", stdout);
             break;
 
         // LDRB Rd, [Rb, #Imm]
