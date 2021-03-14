@@ -12,7 +12,6 @@ source = files([
     'src/main.cpp',
     
     # cpu
-    'src/arm7tdmi/thumb/thumb.cpp',
     'src/arm7tdmi/arm/arm.cpp',
     #'src/arm7tdmi/arm/data_processing.cpp',
     # tests

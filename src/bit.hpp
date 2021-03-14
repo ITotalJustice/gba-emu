@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <cassert>
+#include <concepts>
 
 #ifdef __ARM_ACLE
 #include <arm_acle.h>
@@ -18,7 +19,10 @@ using s16 = std::int16_t;
 using s32 = std::int32_t;
 using s64 = std::int64_t;
 
-template <typename T> [[nodiscard]]
+template <typename T>
+concept IntV = std::is_integral_v<T>;
+
+template <IntV T> [[nodiscard]]
 consteval auto get_mask() -> T {
     if constexpr(sizeof(T) == sizeof(u8)) {
         return 0xFF;
@@ -60,32 +64,32 @@ static_assert(
 
 // bit value should probably be either masked or, in debug mode,
 // check if bit is ever >= 32, if so, throw.
-template <typename T> [[nodiscard]]
+template <IntV T> [[nodiscard]]
 constexpr bool is_set(const T value, const u32 bit) {
     assert(bit < (sizeof(T) * 8) && "bit value out of bounds!");
     return (value & (1ULL << bit)) > 0;
 }
 
-// template <typename T> [[nodiscard]]
+// template <IntV T> [[nodiscard]]
 // constexpr T set(const T value, const u32 bit, const bool on) {
 //     assert(bit < (sizeof(T) * 8) && "bit value out of bounds!");
 //     return value | (on << bit);
 // }
 
-template <typename T> [[nodiscard]]
+template <IntV T> [[nodiscard]]
 constexpr T unset(const T value, const u32 bit) {
     assert(bit < (sizeof(T) * 8) && "bit value out of bounds!");
     return value & (~(1ULL << bit));
 }
 
 // compile-time bit-size checked checked alternitives
-template <u8 bit, typename T> [[nodiscard]]
+template <u8 bit, IntV T> [[nodiscard]]
 constexpr bool is_set(const T value) {
     static_assert(bit < (sizeof(T) * 8), "bit value out of bounds!");
     return (value & (1ULL << bit)) > 0;
 }
 
-template <u8 bit, typename T> [[nodiscard]]
+template <u8 bit, IntV T> [[nodiscard]]
 constexpr T set(const T value, const bool on) {
     constexpr auto bit_width = sizeof(T) * 8;
 
@@ -99,7 +103,7 @@ constexpr T set(const T value, const bool on) {
     return (value & mask) | (on << bit);
 }
 
-template <u8 bit, typename T> [[nodiscard]]
+template <u8 bit, IntV T> [[nodiscard]]
 constexpr T unset(const T value) {
     constexpr auto bit_width = sizeof(T) * 8;
     static_assert(bit < bit_width, "bit value out of bounds!");
@@ -139,7 +143,7 @@ static_assert(
     "sign_extend is broken!"
 );
 
-template <u8 start, u8 end, typename T> [[nodiscard]]
+template <u8 start, u8 end, IntV T> [[nodiscard]]
 consteval auto get_mask_range() -> T {
     static_assert(start < end);
     static_assert(end < (sizeof(T) * 8));
@@ -160,7 +164,7 @@ static_assert(
     "bit::get_mask_range is broken!"
 );
 
-template <u8 start, u8 end, typename T> [[nodiscard]]
+template <u8 start, u8 end, IntV T> [[nodiscard]]
 constexpr auto get_range(const T value) {
     static_assert(start < end, "range is invalid!");
     static_assert(end < (sizeof(T) * 8));

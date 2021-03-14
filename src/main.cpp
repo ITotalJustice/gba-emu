@@ -1,7 +1,6 @@
 #include "arm7tdmi/arm7tdmi.hpp"
 #include "arm7tdmi/thumb/alu_operations.hpp"
 
-#include "mem/memory_map.hpp"
 #include "mem/io_types.hpp"
 #include "bit.hpp"
 #include "cart/rom.hpp"
@@ -24,6 +23,7 @@
 #include "extra/gen_arm_data_process_table/test_lut.hpp"
 #endif
 
+#if 0
 void format01_test() {
     
     // 0b000'00'00000'000'000
@@ -166,6 +166,7 @@ void format04_test() {
         arm7tdmi::thumb_decode_test(op);
     }
 }
+#endif // #if 0
 
 enum class save_type {
     EEPROM,
