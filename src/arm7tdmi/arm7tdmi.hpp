@@ -579,7 +579,7 @@ struct arm7tdmi {
 
 constexpr auto my_size = sizeof(arm7tdmi);
 // static_assert(sizeof(arm7tdmi) == 180);
-static_assert(sizeof(arm7tdmi) == 34015536UL);
+static_assert(sizeof(arm7tdmi) == 34015544UL);
 
 void arm_decode_test(u32 op);
 

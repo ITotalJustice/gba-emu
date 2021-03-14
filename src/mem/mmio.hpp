@@ -260,61 +260,61 @@ struct MMIO {
             case 0x01E:  // 2    W    BG3VOFS   BG3 Y-Offset
                 return this->bg3vofs.read();
             case 0x020:  // 2    W    BG2PA     BG2 Rotation/Scaling Parameter A (dx)
-                break;
+                return this->BG2PA.read();
             case 0x022:  // 2    W    BG2PB     BG2 Rotation/Scaling Parameter B (dmx)
-                break;
+                return this->BG2PB.read();
             case 0x024:  // 2    W    BG2PC     BG2 Rotation/Scaling Parameter C (dy)
-                break;
+                return this->BG2PC.read();
             case 0x026:  // 2    W    BG2PD     BG2 Rotation/Scaling Parameter D (dmy)
-                break;
+                return this->BG2PD.read();
             case 0x028:  // 4    W    BG2X      BG2 Reference Point X-Coordinate
                 break;
             case 0x02C:  // 4    W    BG2Y      BG2 Reference Point Y-Coordinate
                 break;
             case 0x030:  // 2    W    BG3PA     BG3 Rotation/Scaling Parameter A (dx)
-                break;
+                return this->BG3PA.read();
             case 0x032:  // 2    W    BG3PB     BG3 Rotation/Scaling Parameter B (dmx)
-                break;
+                return this->BG3PB.read();
             case 0x034:  // 2    W    BG3PC     BG3 Rotation/Scaling Parameter C (dy)
-                break;
+                return this->BG3PC.read();
             case 0x036:  // 2    W    BG3PD     BG3 Rotation/Scaling Parameter D (dmy)
-                break;
+                return this->BG3PD.read();
             case 0x038:  // 4    W    BG3X      BG3 Reference Point X-Coordinate
                 break;
             case 0x03C:  // 4    W    BG3Y      BG3 Reference Point Y-Coordinate
                 break;
             case 0x040:  // 2    W    WIN0H     Window 0 Horizontal Dimensions
-                break;
+                return this->WIN0H.read();
             case 0x042:  // 2    W    WIN1H     Window 1 Horizontal Dimensions
-                break;
+                return this->WIN1H.read();
             case 0x044:  // 2    W    WIN0V     Window 0 Vertical Dimensions
-                break;
+                return this->WIN0V.read();
             case 0x046:  // 2    W    WIN1V     Window 1 Vertical Dimensions
-                break;
+                return this->WIN1V.read();
             case 0x048:  // 2    R/W  WININ     Inside of Window 0 and 1
-                break;
+                return this->WININ.read();
             case 0x04A:  // 2    R/W  WINOUT    Inside of OBJ Window & Outside of Windows
-                break;
+                return this->WINOUT.read();
             case 0x04C:  // 2    W    MOSAIC    Mosaic Size
-                break;
+                return this->MOSAIC.read();
             case 0x04E:  //      -    -         Not used
                 break;
             case 0x050:  // 2    R/W  BLDCNT    Color Special Effects Selection
-                break;
+                return this->BLDCNT.read();
             case 0x052:  // 2    R/W  BLDALPHA  Alpha Blending Coefficients
-                break;
+                return this->BLDALPHA.read();
             case 0x054:  // 2    W    BLDY      Brightness (Fade-In/Out) Coefficient
-                break;
+                return this->BLDY.read();
             case 0x056:  //      -    -         Not used
                 break;
                 
         // Sound Registers
             case 0x060:  // 2  R/W  SOUND1CNT_L Channel 1 Sweep register       (NR10)
-                break;
+                return this->SOUND1CNT_L.read();
             case 0x062:  // 2  R/W  SOUND1CNT_H Channel 1 Duty/Length/Envelope (NR11, NR12)
-                break;
+                return this->SOUND1CNT_H.read();
             case 0x064:  // 2  R/W  SOUND1CNT_X Channel 1 Frequency/Control    (NR13, NR14)
-                break;
+                return this->SOUND1CNT_X.read();
             case 0x066:  //    -    -           Not used
                 break;
             case 0x068:  // 2  R/W  SOUND2CNT_L Channel 2 Duty/Length/Envelope (NR21, NR22)
@@ -344,13 +344,13 @@ struct MMIO {
             case 0x080:  // 2  R/W  SOUNDCNT_L  Control Stereo/Volume/Enable   (NR50, NR51)
                 break;
             case 0x082:  // 2  R/W  SOUNDCNT_H  Control Mixing/DMA Control
-                break;
+                return this->SOUNDCNT_H.read();
             case 0x084:  // 2  R/W  SOUNDCNT_X  Control Sound on/off           (NR52)
-                break;
+                return this->SOUNDCNT_X.read();
             case 0x086:  //    -    -           Not used
                 break;
             case 0x088:  // 2  BIOS SOUNDBIAS   Sound PWM Control
-                break;
+                return this->SOUNDBIAS.read();
             case 0x08A:  // ..   -    -         Not used
                 break;
             case 0x090:  // 2x10h R/W  WAVE_RAM  Channel 3 Wave Pattern RAM (2 banks!!)
@@ -466,15 +466,15 @@ struct MMIO {
 
         // Interrupt, Waitstate, and Power-Down Control
             case 0x200:  // 2    R/W  IE        Interrupt Enable Register
-                break;
+                return this->IE.read();
             case 0x202:  // 2    R/W  IF        Interrupt Request Flags / IRQ Acknowledge
-                break;
+                return this->IF.read();
             case 0x204:  // 2    R/W  WAITCNT   Game Pak Waitstate Control
                 break;
             case 0x206:  //      -    -         Not used
                 break;
             case 0x208:  // 2    R/W  IME       Interrupt Master Enable Register
-                break;
+                return this->IME.read();
             case 0x20A:  //      -    -         Not used
                 break;
             case 0x300:  // 1    R/W  POSTFLG   Undocumented - Post Boot Flag
@@ -550,60 +550,81 @@ struct MMIO {
                 this->bg3vofs.write(v);
                 break;
             case 0x020:  // 2    W    BG2PA     BG2 Rotation/Scaling Parameter A (dx)
+                this->BG2PA.write(v);
                 break;
             case 0x022:  // 2    W    BG2PB     BG2 Rotation/Scaling Parameter B (dmx)
+                this->BG2PB.write(v);
                 break;
             case 0x024:  // 2    W    BG2PC     BG2 Rotation/Scaling Parameter C (dy)
+                this->BG2PC.write(v);
                 break;
             case 0x026:  // 2    W    BG2PD     BG2 Rotation/Scaling Parameter D (dmy)
+                this->BG2PD.write(v);
                 break;
             case 0x028:  // 4    W    BG2X      BG2 Reference Point X-Coordinate
                 break;
             case 0x02C:  // 4    W    BG2Y      BG2 Reference Point Y-Coordinate
                 break;
             case 0x030:  // 2    W    BG3PA     BG3 Rotation/Scaling Parameter A (dx)
+                this->BG3PA.write(v);
                 break;
             case 0x032:  // 2    W    BG3PB     BG3 Rotation/Scaling Parameter B (dmx)
+                this->BG3PB.write(v);
                 break;
             case 0x034:  // 2    W    BG3PC     BG3 Rotation/Scaling Parameter C (dy)
+                this->BG3PC.write(v);
                 break;
             case 0x036:  // 2    W    BG3PD     BG3 Rotation/Scaling Parameter D (dmy)
+                this->BG3PD.write(v);
                 break;
             case 0x038:  // 4    W    BG3X      BG3 Reference Point X-Coordinate
                 break;
             case 0x03C:  // 4    W    BG3Y      BG3 Reference Point Y-Coordinate
                 break;
             case 0x040:  // 2    W    WIN0H     Window 0 Horizontal Dimensions
+                this->WIN0H.write(v);
                 break;
             case 0x042:  // 2    W    WIN1H     Window 1 Horizontal Dimensions
+                this->WIN1H.write(v);
                 break;
             case 0x044:  // 2    W    WIN0V     Window 0 Vertical Dimensions
+                this->WIN0V.write(v);
                 break;
             case 0x046:  // 2    W    WIN1V     Window 1 Vertical Dimensions
+                this->WIN1V.write(v);
                 break;
             case 0x048:  // 2    R/W  WININ     Inside of Window 0 and 1
+                this->WININ.write(v);
                 break;
             case 0x04A:  // 2    R/W  WINOUT    Inside of OBJ Window & Outside of Windows
+                this->WINOUT.write(v);
                 break;
             case 0x04C:  // 2    W    MOSAIC    Mosaic Size
+                this->MOSAIC.write(v);
                 break;
             case 0x04E:  //      -    -         Not used
                 break;
             case 0x050:  // 2    R/W  BLDCNT    Color Special Effects Selection
+                this->BLDCNT.write(v);
                 break;
             case 0x052:  // 2    R/W  BLDALPHA  Alpha Blending Coefficients
+                this->BLDALPHA.write(v);
                 break;
             case 0x054:  // 2    W    BLDY      Brightness (Fade-In/Out) Coefficient
+                this->BLDY.write(v);
                 break;
             case 0x056:  //      -    -         Not used
                 break;
                 
         // Sound Registers
             case 0x060:  // 2  R/W  SOUND1CNT_L Channel 1 Sweep register       (NR10)
+                this->SOUND1CNT_L.write(v);
                 break;
             case 0x062:  // 2  R/W  SOUND1CNT_H Channel 1 Duty/Length/Envelope (NR11, NR12)
+                this->SOUND1CNT_H.write(v);
                 break;
             case 0x064:  // 2  R/W  SOUND1CNT_X Channel 1 Frequency/Control    (NR13, NR14)
+                this->SOUND1CNT_X.write(v);
                 break;
             case 0x066:  //    -    -           Not used
                 break;
@@ -634,12 +655,15 @@ struct MMIO {
             case 0x080:  // 2  R/W  SOUNDCNT_L  Control Stereo/Volume/Enable   (NR50, NR51)
                 break;
             case 0x082:  // 2  R/W  SOUNDCNT_H  Control Mixing/DMA Control
+                this->SOUNDCNT_H.write(v);
                 break;
             case 0x084:  // 2  R/W  SOUNDCNT_X  Control Sound on/off           (NR52)
+                this->SOUNDCNT_X.write(v);
                 break;
             case 0x086:  //    -    -           Not used
                 break;
             case 0x088:  // 2  BIOS SOUNDBIAS   Sound PWM Control
+                this->SOUNDBIAS.write(v);
                 break;
             case 0x08A:  // ..   -    -         Not used
                 break;
@@ -756,14 +780,17 @@ struct MMIO {
 
         // Interrupt, Waitstate, and Power-Down Control
             case 0x200:  // 2    R/W  IE        Interrupt Enable Register
+                this->IE.write(v);
                 break;
             case 0x202:  // 2    R/W  IF        Interrupt Request Flags / IRQ Acknowledge
+                this->IF.write(v);
                 break;
             case 0x204:  // 2    R/W  WAITCNT   Game Pak Waitstate Control
                 break;
             case 0x206:  //      -    -         Not used
                 break;
             case 0x208:  // 2    R/W  IME       Interrupt Master Enable Register
+                this->IME.write(v);
                 break;
             case 0x20A:  //      -    -         Not used
                 break;
@@ -827,49 +854,52 @@ struct MMIO {
     BG3HOFS bg3hofs;
     BG3VOFS bg3vofs;
 
-    BG2X_L bg2x_l;
-    BG2X_H bg2x_h;
-    BG2Y_L bg2y_l;
-    BG2Y_H bg2y_h;
+    BG2X_L BG2X_L;
+    BG2X_H BG2X_H;
+    BG2Y_L BG2Y_L;
+    BG2Y_H BG2Y_H;
 
-    BG2PA bg2pa;
-    BG2PB bg2pb;
-    BG2PC bg2pc;
-    BG2PD bg2pd;
+    BG2PA BG2PA;
+    BG2PB BG2PB;
+    BG2PC BG2PC;
+    BG2PD BG2PD;
     
-    BG3X_L bg3x_l;
-    BG3X_H bg3x_h;
-    BG3Y_L bg3y_l;
-    BG3Y_H bg3y_h;
+    BG3X_L BG3X_L;
+    BG3X_H BG3X_H;
+    BG3Y_L BG3Y_L;
+    BG3Y_H BG3Y_H;
 
-    BG3PA bg3pa;
-    BG3PB bg3pb;
-    BG3PC bg3pc;
-    BG3PD bg3pd;
+    BG3PA BG3PA;
+    BG3PB BG3PB;
+    BG3PC BG3PC;
+    BG3PD BG3PD;
 
-    WIN0H win0h;
-    WIN1H win1h;
+    WIN0H WIN0H;
+    WIN1H WIN1H;
 
-    WIN0V win0v;
-    WIN1V win1v;
+    WIN0V WIN0V;
+    WIN1V WIN1V;
 
-    WININ winin;
-    WINOUT winout;
+    WININ WININ;
+    WINOUT WINOUT;
 
-    MOSAIC mosaic;
+    MOSAIC MOSAIC;
 
-    BLDCNT bldcnt;
-    BLDALPHA bldalpha;
-    BLDY bldy;
+    BLDCNT BLDCNT;
+    BLDALPHA BLDALPHA;
+    BLDY BLDY;
 
-    SOUND1CNT_L sound1cnt_l;
-    SOUND1CNT_H sound1cnt_h;
-    SOUND1CNT_X sound1cnt_x;
+    SOUND1CNT_L SOUND1CNT_L;
+    SOUND1CNT_H SOUND1CNT_H;
+    SOUND1CNT_X SOUND1CNT_X;
 
-    SOUNDCNT_H soundcnt_h;
-    SOUNDCNT_X soundcnt_x;
-    SOUNDBIAS soundbias;
+    SOUNDCNT_H SOUNDCNT_H;
+    SOUNDCNT_X SOUNDCNT_X;
+    SOUNDBIAS SOUNDBIAS;
 
+    IME IME;
+    IE IE;
+    IF IF;
     // todo: many many more registers...
 };
 

@@ -600,6 +600,52 @@ struct SOUNDBIAS {
     GENERATE_GET_SET_FUNC(15, initial, this->value);
 };
 
+// 
+// SOURCE: 
+struct IME {
+    u32 value : 1;
+
+    [[nodiscard]]
+    constexpr auto read() const noexcept {
+        return this->value;
+    }
+
+    constexpr void write(const u32 v) noexcept {
+        this->value = v;
+    }
+};
+
+struct IE {
+    u16 value : 14;
+
+    [[nodiscard]]
+    constexpr auto read() const noexcept {
+        return this->value;
+    }
+
+    constexpr void write(const u16 v) noexcept {
+        this->value = v;
+    }
+
+    GENERATE_GET_SET_FUNC(0, lcd_vblank, this->value);
+    GENERATE_GET_SET_FUNC(1, lcd_hblank, this->value);
+    GENERATE_GET_SET_FUNC(2, lcd_vcounter_match, this->value);
+    GENERATE_GET_SET_FUNC(3, timer0_overflow, this->value);
+    GENERATE_GET_SET_FUNC(4, timer1_overflow, this->value);
+    GENERATE_GET_SET_FUNC(5, timer2_overflow, this->value);
+    GENERATE_GET_SET_FUNC(6, timer3_overflow, this->value);
+    GENERATE_GET_SET_FUNC(7, serial_communication, this->value);
+    GENERATE_GET_SET_FUNC(8, dma0, this->value);
+    GENERATE_GET_SET_FUNC(9, dma1, this->value);
+    GENERATE_GET_SET_FUNC(10, dma2, this->value);
+    GENERATE_GET_SET_FUNC(11, dma3, this->value);
+    GENERATE_GET_SET_FUNC(12, keypad, this->value);
+    GENERATE_GET_SET_FUNC(13, game_pak, this->value);
+};
+
+// they're the same
+using IF = IE;
+
 #undef GENERATE_GET_SET_FUNC
 #undef GENERATE_GET_SET_RANGE_FUNC
 
