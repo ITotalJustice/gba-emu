@@ -25,14 +25,17 @@ enum class shift {
 
 // All shifts are mask 31 (&31) as to not cause UB when shifting by more
 // bits than possible.
+[[nodiscard]]
 constexpr u32 shift_logical_left(const u32 v, const u32 shift) {
     return v << (shift & 31U);
 }
 
+[[nodiscard]]
 constexpr u32 shift_logical_right(const u32 v, const u32 shift) {
     return v >> (shift & 31U);
 }
 
+[[nodiscard]]
 constexpr u32 shift_arithmetic_right(const u32 v, const u32 shift) {
     // signed bit should always be preserved, so casting works...
     static_assert(
@@ -43,6 +46,7 @@ constexpr u32 shift_arithmetic_right(const u32 v, const u32 shift) {
     return static_cast<u32>(static_cast<s32>(v) >> shift);
 }
 
+[[nodiscard]]
 constexpr u32 shift_rotate_right(const u32 v, const u32 shift) {
     return bit::rotr(v, shift);
 }

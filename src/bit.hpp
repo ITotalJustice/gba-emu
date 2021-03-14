@@ -18,7 +18,7 @@ using s16 = std::int16_t;
 using s32 = std::int32_t;
 using s64 = std::int64_t;
 
-template <typename T>
+template <typename T> [[nodiscard]]
 consteval auto get_mask() -> T {
     if constexpr(sizeof(T) == sizeof(u8)) {
         return 0xFF;
@@ -34,6 +34,7 @@ consteval auto get_mask() -> T {
     }
 }
 
+[[nodiscard]]
 constexpr u32 rotr(const u32 value, const u32 shift) {
 // on arm, ror is an actual instruction, however i am not sure how to force
 // gcc to generate a ror without using instrinsics.
@@ -84,7 +85,7 @@ constexpr bool is_set(const T value) {
     return (value & (1ULL << bit)) > 0;
 }
 
-template <u8 bit, typename T>
+template <u8 bit, typename T> [[nodiscard]]
 constexpr T set(const T value, const bool on) {
     constexpr auto bit_width = sizeof(T) * 8;
 
@@ -118,7 +119,7 @@ static_assert(
 // as of c++20, a >> b, where a is negative-signed, this will perform asr shift.
 // prior to c++20 this was implementation defiened, so it could be lsr
 // however gcc and clang both did asr anyway.
-template <u8 start_size>
+template <u8 start_size> [[nodiscard]]
 constexpr u32 sign_extend(const u32 value) {
     static_assert(start_size <= 31, "bit start size is out of bounds!");
 
@@ -138,7 +139,7 @@ static_assert(
     "sign_extend is broken!"
 );
 
-template <u8 start, u8 end, typename T>
+template <u8 start, u8 end, typename T> [[nodiscard]]
 consteval auto get_mask_range() -> T {
     static_assert(start < end);
     static_assert(end < (sizeof(T) * 8));
@@ -159,7 +160,7 @@ static_assert(
     "bit::get_mask_range is broken!"
 );
 
-template <u8 start, u8 end, typename T>
+template <u8 start, u8 end, typename T> [[nodiscard]]
 constexpr auto get_range(const T value) {
     static_assert(start < end, "range is invalid!");
     static_assert(end < (sizeof(T) * 8));

@@ -75,7 +75,7 @@ struct MMIO {
     // todo: add requires or static_assert for type (u8, u16, u32...)
     // todo: check if host system endian matters here
     // if so, if constexpr (std::endian == little) { ... } else { ... }
-    template <typename T>
+    template <typename T> [[nodiscard]]
     constexpr auto read_array(std::span<const u8> array, const u32 addr) -> T {
         if constexpr(sizeof(T) == sizeof(u8)) { // u8
             return array[addr];
@@ -115,7 +115,7 @@ struct MMIO {
 
     // the top byte ((a >> 24) 0xF) can be used
     // as an index rather than a huge jump table
-    template <typename T>
+    template <typename T> [[nodiscard]]
     constexpr auto read(const u32 addr) -> T {
         switch ((addr >> 8) & 0xFF'FF'FF) {
         // General Internal Memory
@@ -223,7 +223,7 @@ struct MMIO {
         }
     }
 
-    template <typename T>
+    template <typename T> [[nodiscard]]
     constexpr auto read_io(const u32 addr) -> T {
         switch (addr & 0x7FF) {
         // LCD I/O Registers

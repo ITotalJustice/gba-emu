@@ -17,7 +17,7 @@ enum class rlist_type {
 };
 
 // todo: clean this up, it's a little too over complicated atm
-template <rlist_type type>
+template <rlist_type type> [[nodiscard]]
 constexpr auto rlist_callback(arm7tdmi& arm, u32 addr, u32 rlist) {  
     if constexpr(type == rlist_type::store) {
         // the lowest reg is pushed to the lowest addr

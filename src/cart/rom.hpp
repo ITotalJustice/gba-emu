@@ -69,18 +69,22 @@ union header {
         std::copy(data.begin(), data.begin() + this->SIZE, this->private_data);
     }
 
+    [[nodiscard]]
     constexpr auto get_game_title() const {
         return std::string_view{this->game_title, std::size(this->game_title)};   
     }
 
+    [[nodiscard]]
     constexpr auto get_game_code() const {
         return std::string_view{this->game_code, std::size(this->game_code)};  
     }
 
+    [[nodiscard]]
     constexpr auto get_maker_code() const {
         return std::string_view{this->maker_code, std::size(this->maker_code)};  
     }
 
+    [[nodiscard]]
     constexpr auto get_checksum() const {
         const std::span check_data{
             this->private_data + this->CHECKSUM_OFFSET,
@@ -94,11 +98,13 @@ union header {
         );
     };
 
-    constexpr bool verify_checksum() const {
+    [[nodiscard]]
+    constexpr auto verify_checksum() const {
         return complement_check == this->get_checksum();
     }
 
-    constexpr bool verify_fixed_value() const {
+    [[nodiscard]]
+    constexpr auto verify_fixed_value() const {
         return this->fixed_value == FIXED_VALUE;
     }
 

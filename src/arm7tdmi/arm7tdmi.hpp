@@ -478,6 +478,7 @@ struct arm7tdmi {
         this->cpsr.value = v;
     }
 
+    // this is very wrong / broken...
     constexpr auto switch_mode(const mode new_mode) noexcept {
         const auto current_mode = this->cpsr.get_mode();
         // if the modes are the same, don't switch...
