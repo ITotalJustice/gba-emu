@@ -72,6 +72,7 @@ constexpr auto instruction_push(arm7tdmi& arm, const u32 rlist) {
         const auto addr = rlist_callback<rlist_type::store>(
             arm, 
             arm.get_sp(),
+            // set for the LR (14) reg to be stored
             rlist | 0b0100'0000'0000'0000
         );
         
@@ -97,9 +98,12 @@ constexpr auto instruction_pop(arm7tdmi& arm, const u8 rlist) {
         const auto addr = rlist_callback<rlist_type::load>(
             arm,
             arm.get_sp(),
+            // set for the PC (15) reg to be restored
             rlist | 0b1000'0000'0000'0000
         );
         arm.set_sp(addr);
+        // TODO: does this adjust the PC after to ensure it is
+        // aligned?
     }
 }
 
