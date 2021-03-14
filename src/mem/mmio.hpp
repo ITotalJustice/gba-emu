@@ -827,6 +827,49 @@ struct MMIO {
     BG3HOFS bg3hofs;
     BG3VOFS bg3vofs;
 
+    BG2X_L bg2x_l;
+    BG2X_H bg2x_h;
+    BG2Y_L bg2y_l;
+    BG2Y_H bg2y_h;
+
+    BG2PA bg2pa;
+    BG2PB bg2pb;
+    BG2PC bg2pc;
+    BG2PD bg2pd;
+    
+    BG3X_L bg3x_l;
+    BG3X_H bg3x_h;
+    BG3Y_L bg3y_l;
+    BG3Y_H bg3y_h;
+
+    BG3PA bg3pa;
+    BG3PB bg3pb;
+    BG3PC bg3pc;
+    BG3PD bg3pd;
+
+    WIN0H win0h;
+    WIN1H win1h;
+
+    WIN0V win0v;
+    WIN1V win1v;
+
+    WININ winin;
+    WINOUT winout;
+
+    MOSAIC mosaic;
+
+    BLDCNT bldcnt;
+    BLDALPHA bldalpha;
+    BLDY bldy;
+
+    SOUND1CNT_L sound1cnt_l;
+    SOUND1CNT_H sound1cnt_h;
+    SOUND1CNT_X sound1cnt_x;
+
+    SOUNDCNT_H soundcnt_h;
+    SOUNDCNT_X soundcnt_x;
+    SOUNDBIAS soundbias;
+
     // todo: many many more registers...
 };
 

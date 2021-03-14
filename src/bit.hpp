@@ -182,5 +182,17 @@ static_assert(
     "bit::get_range is broken!"
 );
 
+template <u8 start, u8 end, IntV Int, IntV Slice> [[nodiscard]]
+constexpr auto set_range(const Int value, const Slice slice) {
+    static_assert(start < end, "range is invalid!");
+    static_assert(end < (sizeof(Int) * 8));
+
+    // invert them as we want to set the range
+    constexpr auto mask = get_mask_range<start, end, Int>();
+    constexpr auto inverted_mask = ~mask;
+
+    return (value & inverted_mask) | ((slice << start) & mask);
+}
+
 } // namespace bit
 

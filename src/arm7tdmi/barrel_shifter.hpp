@@ -4,18 +4,8 @@
 #include "../bit.hpp"
 
 #include <cstdint>
-// #include <bit>
 
 namespace arm7tdmi {
-
-// unused yet. some shifts update flags (i think) whilst others don't
-// idea is to pass this enum as template arg then have if constexpr()
-// to switch functions at compile time, so the caller function is consistent
-// and there's no duplicate function / overloading.
-enum class shift {
-    no_flags,
-    flags_nzcv,
-};
 
 // NOTE: might make these templated args as i imagine that
 // there are signed shifted values.

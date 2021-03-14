@@ -27,6 +27,7 @@ source = files([
     'src/arm7tdmi/tests/test_thumb_decode.cpp',
 
     'src/mem/tests/test_constexpr_mem.cpp',
+    'src/mem/tests/test_io_unused_bits.cpp',
     
     # cart
     'src/cart/tests/test_header_checksum.cpp',

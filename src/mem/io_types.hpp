@@ -49,6 +49,15 @@ using s64 = std::int64_t;
         value = bit::set<bit_v>(value, on); \
     }
 
+#define GENERATE_GET_SET_RANGE_FUNC(r0, r1, name, value) \
+    [[nodiscard]] \
+    constexpr auto get_##name() const noexcept -> auto { \
+        return bit::get_range<r0, r1>(value); \
+    } \
+    constexpr auto set_##name(const auto v) noexcept -> void { \
+        value = bit::set_range<r0, r1>(value, v); \
+    }
+
 // LCD I/O Display Control 
 // SOURCE: https://problemkaputt.de/gbatek.htm#lcdiodisplaycontrol
 struct DISPCNT {
@@ -63,19 +72,7 @@ struct DISPCNT {
         this->value = v & 0b1111'1111'1111'1000;
     }
 
-    // NOTE: values should be 0-5
-    [[nodiscard]]
-    constexpr auto get_bg_mode() const noexcept -> u8 {
-        assert((this->value & 0b111) <= 5);
-        return this->value & 0b111;
-    }
-
-    // NOTE: values should be 0-5
-    constexpr auto set_bg_mode(const u8 v) noexcept -> void {
-        assert((v & 0b111) <= 5);
-        this->value = (this->value & 0b1111'1111'1111'1000) | (v & 0b111);
-    }
-
+    GENERATE_GET_SET_RANGE_FUNC(0, 2, bg_mode, this->value);
     GENERATE_GET_SET_FUNC(3, cgb_mode, this->value);
     GENERATE_GET_SET_FUNC(4, display_frame_select, this->value);
     GENERATE_GET_SET_FUNC(5, hblank_interval_free, this->value);
@@ -117,7 +114,7 @@ struct DISPSTAT {
     }
 
     constexpr void write(const u16 v) noexcept {
-        this->value = v & 0b1111'1111'0011'1111;
+        this->value = v & 0b1111'1111'0011'1000;
     }
 
     GENERATE_GET_SET_FUNC(0, vblank_flag, this->value);
@@ -126,15 +123,7 @@ struct DISPSTAT {
     GENERATE_GET_SET_FUNC(3, vblank_irq_enable, this->value);
     GENERATE_GET_SET_FUNC(4, hblank_irq_enable, this->value);
     GENERATE_GET_SET_FUNC(5, vcounter_irq_enable, this->value);
-
-    [[nodiscard]]
-    constexpr auto get_vcount_setting() const noexcept -> u8 {
-        return this->value >> 8;
-    }
-
-    constexpr auto set_vcount_setting(const u8 v) noexcept -> void {
-        this->value = (this->value & 0b0011'1111) | (v << 8);
-    }
+    GENERATE_GET_SET_RANGE_FUNC(8, 15, vcount_setting, this->value);
 };
 
 // read only!
@@ -146,10 +135,9 @@ struct VCOUNT {
         return this->value;
     }
 
-    [[nodiscard]]
-    constexpr auto get_current_scanline() const noexcept -> u8 {
-        return this->value & 0xFF;
-    }
+    constexpr void write([[maybe_unused]] const u16 v) noexcept {}
+
+    GENERATE_GET_SET_RANGE_FUNC(0, 7, current_scanline, this->value);
 };
 
 // LCD I/O BG Control
@@ -177,40 +165,16 @@ struct BGxCNT {
         }
     }
 
-    [[nodiscard]]
-    constexpr auto get_bg_priority() const noexcept -> u8 {
-        return this->value & 0b11;
-    }
-
-    constexpr auto set_bg_priority(const u8 v) noexcept -> void {
-        this->value = (this->value & 0b1111'1111'1111'1100) | (v & 0b11);
-    }
-
-    [[nodiscard]]
-    constexpr auto get_char_base_block() const noexcept -> u8 {
-        return (this->value >> 2) & 0b11;
-    }
-
-    constexpr auto set_char_base_block(const u8 v) noexcept -> void {
-        this->value = (this->value & 0b1111'1111'1111'0011) | ((v & 0b11) << 2);
-    }
-
+    GENERATE_GET_SET_RANGE_FUNC(0, 1, bg_priority, this->value);
+    GENERATE_GET_SET_RANGE_FUNC(2, 3, char_base_block, this->value);
     GENERATE_GET_SET_FUNC(6, mosaic, this->value);
     GENERATE_GET_SET_FUNC(7, colours_palettes, this->value);
-    
-    [[nodiscard]]
-    constexpr auto get_screen_base_block() const noexcept -> u8 {
-        return (this->value >> 8) & 0b1'1111;
-    }
-
-    constexpr auto set_screen_base_block(const u8 v) noexcept -> void {
-        this->value = (this->value & 0b1110'0000'1111'1111) | ((v & 0b1'1111) << 8);
-    }
+    GENERATE_GET_SET_RANGE_FUNC(8, 12, screen_base_block, this->value);
 
     [[nodiscard]]
     constexpr auto get_display_area_overflow() const -> bool {
         if constexpr(num == 2 || num == 3) {
-            return (this->value >> 13) & 0b1;
+            return bit::is_set<13>(this->value);
         } else {
             throw std::runtime_error("this method is not usable!");
         }
@@ -218,20 +182,13 @@ struct BGxCNT {
 
     constexpr auto set_display_area_overflow(const bool v) -> void {
         if constexpr(num == 2 || num == 3) {
-            this->value = (this->value & 0b1101'1111'1111'1111) | (v << 13);
+            this->value = bit::set<13>(this->value, v);
         } else {
             throw std::runtime_error("this method is not usable!");
         }
     }
 
-    [[nodiscard]]
-    constexpr auto get_screen_size() const noexcept -> u8 {
-        return (this->value >> 14) & 0b11;
-    }
-
-    constexpr auto set_screen_size(const u8 v) noexcept -> void {
-        this->value = (this->value & 0b0011'1111'1111'1111) | ((v & 0b11) << 14);
-    }
+    GENERATE_GET_SET_RANGE_FUNC(14, 15, screen_size, this->value);
 };
 
 using BG0CNT = BGxCNT<0>;
@@ -272,42 +229,378 @@ using BG2VOFS = BG0HOFS;
 using BG3HOFS = BG0HOFS;
 using BG3VOFS = BG0HOFS;
 
-constexpr void testing() {
-    constexpr auto func = [](){
-        DISPSTAT reg{};
-        reg.write(33);
-        return reg.read() == 33;
-    };
+// LCD I/O BG Rotation/Scaling
+// SOURCE: https://problemkaputt.de/gbatek.htm#lcdiobgrotationscaling
+struct BG2X_L {
+    u32 value : 28;
 
-    constexpr auto func2 = [](){
-        const DISPCNT reg{33};
-        return reg.read() == 33;
-    };
+    [[nodiscard]]
+    constexpr auto read() const noexcept {
+        return this->value;
+    }
 
-    constexpr auto func3 = [](){
-        const BGxCNT<2> bg0cnt{};
-        return !bg0cnt.get_display_area_overflow();
-    };
+    constexpr void write(const u32 v) noexcept {
+        this->value = v;
+    }
 
-    constexpr auto func4 = [](){
-        BG0VOFS reg{};
-        reg.write(511);
-        return reg.get_offset() == 511;
-    };
+    GENERATE_GET_SET_RANGE_FUNC(0, 7, fractional, this->value);
+    GENERATE_GET_SET_RANGE_FUNC(8, 26, interger, this->value);
+    GENERATE_GET_SET_RANGE_FUNC(8, 27, interger_signed, this->value);
+    GENERATE_GET_SET_FUNC(27, sign, this->value);
+};
 
-    constexpr auto func5 = [](){
-        BG0VOFS reg{};
-        reg.write(512);
-        return reg.get_offset() == 0;
-    };
+using BG2X_H = BG2X_L;
+using BG2Y_L = BG2X_L;
+using BG2Y_H = BG2X_L;
 
-    static_assert(func());
-    static_assert(func2());
-    static_assert(func3());
-    static_assert(func4());
-    static_assert(func5());
-}
+struct BG2PA {
+    u16 value;
+
+    [[nodiscard]]
+    constexpr auto read() const noexcept {
+        return this->value;
+    }
+
+    constexpr void write(const u16 v) noexcept {
+        this->value = v;
+    }
+
+    GENERATE_GET_SET_RANGE_FUNC(0, 7, fractional, this->value);
+    GENERATE_GET_SET_RANGE_FUNC(8, 14, interger, this->value);
+    GENERATE_GET_SET_RANGE_FUNC(8, 15, interger_signed, this->value);
+    GENERATE_GET_SET_FUNC(15, sign, this->value);
+};
+
+using BG2PB = BG2PA;
+using BG2PC = BG2PA;
+using BG2PD = BG2PA;
+
+using BG3X_L = BG2X_L;
+using BG3X_H = BG2X_L;
+using BG3Y_L = BG2X_L;
+using BG3Y_H = BG2X_L;
+
+using BG3PA = BG2PA;
+using BG3PB = BG2PA;
+using BG3PC = BG2PA;
+using BG3PD = BG2PA;
+
+// LCD I/O Window Feature
+// SOURCE: https://problemkaputt.de/gbatek.htm#lcdiowindowfeature
+struct WIN0H {
+    u16 value;
+
+    [[nodiscard]]
+    constexpr auto read() const noexcept {
+        return this->value;
+    }
+
+    constexpr void write(const u16 v) noexcept {
+        this->value = v;
+    }
+
+    // TODO: manually write these (read GBATEK)
+    GENERATE_GET_SET_RANGE_FUNC(0, 7, x2, this->value);
+    GENERATE_GET_SET_RANGE_FUNC(8, 15, x1, this->value);
+};
+
+using WIN1H = WIN0H;
+
+struct WIN0V {
+    u16 value;
+
+    [[nodiscard]]
+    constexpr auto read() const noexcept {
+        return this->value;
+    }
+
+    constexpr void write(const u16 v) noexcept {
+        this->value = v;
+    }
+
+    // TODO: manually write these (read GBATEK) 
+    GENERATE_GET_SET_RANGE_FUNC(0, 7, y2, this->value);
+    GENERATE_GET_SET_RANGE_FUNC(8, 15, y1, this->value);
+};
+
+using WIN1V = WIN0V;
+
+struct WININ {
+    u16 value : 14;
+
+    [[nodiscard]]
+    constexpr auto read() const noexcept {
+        return this->value & 0b0011'1111'0011'1111;
+    }
+
+    constexpr void write(const u16 v) noexcept {
+        this->value = v & 0b0011'1111'0011'1111;
+    }
+
+    GENERATE_GET_SET_FUNC(0, window0_bg0_enable, this->value);
+    GENERATE_GET_SET_FUNC(1, window0_bg1_enable, this->value);
+    GENERATE_GET_SET_FUNC(2, window0_bg2_enable, this->value);
+    GENERATE_GET_SET_FUNC(3, window0_bg3_enable, this->value);
+    GENERATE_GET_SET_FUNC(4, window0_obj_enable, this->value);
+    GENERATE_GET_SET_FUNC(5, window0_colour_special_effect, this->value);
+
+    GENERATE_GET_SET_FUNC(8, window1_bg0_enable, this->value);
+    GENERATE_GET_SET_FUNC(9, window1_bg1_enable, this->value);
+    GENERATE_GET_SET_FUNC(10, window1_bg2_enable, this->value);
+    GENERATE_GET_SET_FUNC(11, window1_bg3_enable, this->value);
+    GENERATE_GET_SET_FUNC(12, window1_obj_enable, this->value);
+    GENERATE_GET_SET_FUNC(13, window1_colour_special_effect, this->value);
+};
+
+struct WINOUT {
+    u16 value : 14;
+
+    [[nodiscard]]
+    constexpr auto read() const noexcept {
+        return this->value & 0b0011'1111'0011'1111;
+    }
+
+    constexpr void write(const u16 v) noexcept {
+        this->value = v & 0b0011'1111'0011'1111;
+    }
+
+    GENERATE_GET_SET_FUNC(0, outside_bg0_enable, this->value);
+    GENERATE_GET_SET_FUNC(1, outside_bg1_enable, this->value);
+    GENERATE_GET_SET_FUNC(2, outside_bg2_enable, this->value);
+    GENERATE_GET_SET_FUNC(3, outside_bg3_enable, this->value);
+    GENERATE_GET_SET_FUNC(4, outside_obj_enable, this->value);
+    GENERATE_GET_SET_FUNC(5, outside_colour_special_effect, this->value);
+
+    GENERATE_GET_SET_FUNC(8, obj_window_bg0_enable, this->value);
+    GENERATE_GET_SET_FUNC(9, obj_window_bg1_enable, this->value);
+    GENERATE_GET_SET_FUNC(10, obj_window_bg2_enable, this->value);
+    GENERATE_GET_SET_FUNC(11, obj_window_bg3_enable, this->value);
+    GENERATE_GET_SET_FUNC(12, obj_window_obj_enable, this->value);
+    GENERATE_GET_SET_FUNC(13, obj_window_colour_special_effect, this->value);
+};
+
+// LCD I/O Mosaic Function
+// SOURCE: https://problemkaputt.de/gbatek.htm#lcdiomosaicfunction
+struct MOSAIC {
+    u32 value : 16;
+
+    [[nodiscard]]
+    constexpr auto read() const noexcept {
+        return this->value;
+    }
+
+    constexpr void write(const u32 v) noexcept {
+        this->value = v;
+    }
+
+    // TODO: manually write these (read GBATEK) 
+    GENERATE_GET_SET_RANGE_FUNC(0, 3, bg_h_size, this->value);
+    GENERATE_GET_SET_RANGE_FUNC(4, 7, bg_v_size, this->value);
+    GENERATE_GET_SET_RANGE_FUNC(8, 11, obj_h_size, this->value);
+    GENERATE_GET_SET_RANGE_FUNC(12, 15, obj_v_size, this->value);
+};
+
+// LCD I/O Color Special Effects
+// SOURCE: https://problemkaputt.de/gbatek.htm#lcdiocolorspecialeffects
+struct BLDCNT {
+    u16 value : 14;
+
+    [[nodiscard]]
+    constexpr auto read() const noexcept {
+        return this->value;
+    }
+
+    constexpr auto write(const u16 v) noexcept -> void {
+        this->value = v;
+    }
+
+    GENERATE_GET_SET_FUNC(0, bg0_1st_target_pixel, this->value);
+    GENERATE_GET_SET_FUNC(1, bg1_1st_target_pixel, this->value);
+    GENERATE_GET_SET_FUNC(2, bg2_1st_target_pixel, this->value);
+    GENERATE_GET_SET_FUNC(3, bg3_1st_target_pixel, this->value);
+    GENERATE_GET_SET_FUNC(4, obj_1st_target_pixel, this->value);
+    GENERATE_GET_SET_FUNC(5, bd_1st_target_pixel, this->value);
+    GENERATE_GET_SET_RANGE_FUNC(6, 7, colour_special_effect, this->value);
+    GENERATE_GET_SET_FUNC(8, bg0_2nd_target_pixel, this->value);
+    GENERATE_GET_SET_FUNC(9, bg1_2nd_target_pixel, this->value);
+    GENERATE_GET_SET_FUNC(10, bg2_2nd_target_pixel, this->value);
+    GENERATE_GET_SET_FUNC(11, bg3_2nd_target_pixel, this->value);
+    GENERATE_GET_SET_FUNC(12, obj_2nd_target_pixel, this->value);
+    GENERATE_GET_SET_FUNC(13, bd_2nd_target_pixel, this->value);
+};
+
+struct BLDALPHA {
+    u16 value : 13;
+
+    [[nodiscard]]
+    constexpr auto read() const noexcept {
+        return this->value & 0b0001'1111'0001'1111;
+    }
+
+    constexpr void write(const u16 v) noexcept {
+        this->value = v & 0b0001'1111'0001'111;
+    }
+
+    // TODO: manually write these (read GBATEK) 
+    GENERATE_GET_SET_RANGE_FUNC(0, 4, eva_coefficient_1st, this->value);
+    GENERATE_GET_SET_RANGE_FUNC(8, 12, eva_coefficient_2nd, this->value);
+};
+
+struct BLDY {
+    u32 value : 5;
+
+    [[nodiscard]]
+    constexpr auto read() const noexcept {
+        return this->value;
+    }
+
+    constexpr void write(const u32 v) noexcept {
+        this->value = v;
+    }
+
+    // TODO: manually write these (read GBATEK) 
+    GENERATE_GET_SET_RANGE_FUNC(0, 4, evy_coefficient, this->value);
+};
+
+
+// GBA Sound Channel 1 - Tone & Sweep
+// SOURCE: https://problemkaputt.de/gbatek.htm#gbasoundchannel1tonesweep
+struct SOUND1CNT_L {
+    u16 value : 7;
+
+    [[nodiscard]]
+    constexpr auto read() const noexcept {
+        return this->value;
+    }
+
+    constexpr void write(const u16 v) noexcept {
+        this->value = v;
+    }
+
+    GENERATE_GET_SET_RANGE_FUNC(0, 2, num_sweep_shift, this->value);
+    GENERATE_GET_SET_FUNC(3, sweep_freq_direction, this->value);
+    GENERATE_GET_SET_RANGE_FUNC(4, 6, sweep_time, this->value);
+};
+
+struct SOUND1CNT_H {
+    u16 value;
+
+    [[nodiscard]]
+    constexpr auto read() const noexcept {
+        return this->value & 0b1111'1111'1100'0000;
+    }
+
+    constexpr void write(const u16 v) noexcept {
+        this->value = v;
+    }
+
+    GENERATE_GET_SET_RANGE_FUNC(0, 5, sound_len, this->value);
+    GENERATE_GET_SET_RANGE_FUNC(6, 7, wave_pattern_duty, this->value);
+    GENERATE_GET_SET_RANGE_FUNC(8, 10, envelope_step_time, this->value);
+    GENERATE_GET_SET_FUNC(11, envelope_direction, this->value);
+    GENERATE_GET_SET_RANGE_FUNC(12, 15, initial_vol_of_envelope, this->value);
+};
+
+struct SOUND1CNT_X {
+    u32 value : 16;
+
+    [[nodiscard]]
+    constexpr auto read() const noexcept {
+        return this->value & 0b0100'0000'0000'0000;
+    }
+
+    constexpr void write(const u32 v) noexcept {
+        this->value = v & 0b1100'1111'1111'1111;
+    }
+
+    GENERATE_GET_SET_RANGE_FUNC(0, 10, freq, this->value);
+    GENERATE_GET_SET_FUNC(14, len_flag, this->value);
+    GENERATE_GET_SET_FUNC(15, initial, this->value);
+};
+
+// GBA Sound Channel 2 - Tone
+// SOURCE: https://problemkaputt.de/gbatek.htm#gbasoundchannel2tone
+
+
+// GBA Sound Channel 3 - Wave Output
+// SOURCE: https://problemkaputt.de/gbatek.htm#gbasoundchannel3waveoutput
+
+
+// GBA Sound Channel 4 - Noise
+// SOURCE: https://problemkaputt.de/gbatek.htm#gbasoundchannel4noise
+
+
+// GBA Sound Channel A and B - DMA Sound
+// SOURCE: https://problemkaputt.de/gbatek.htm#gbasoundchannelaandbdmasound
+
+
+// GBA Sound Control Registers
+// SOURCE: https://problemkaputt.de/gbatek.htm#gbasoundcontrolregisters
+
+// 1 more still left...
+
+struct SOUNDCNT_H {
+    u16 value;
+
+    [[nodiscard]]
+    constexpr auto read() const noexcept {
+        return this->value & 0b1111'0000'0000'1111;
+    }
+
+    constexpr void write(const u16 v) noexcept {
+        this->value = v & 0b1111'1111'0000'1111;
+    }
+
+    GENERATE_GET_SET_RANGE_FUNC(0, 1, sound_1_4_vol, this->value);
+    GENERATE_GET_SET_FUNC(2, dma_sound_a_vol, this->value);
+    GENERATE_GET_SET_FUNC(3, dma_sound_b_vol, this->value);
+    GENERATE_GET_SET_FUNC(8, dma_sound_a_enable_right, this->value);
+    GENERATE_GET_SET_FUNC(9, dma_sound_a_enable_left, this->value);
+    GENERATE_GET_SET_FUNC(10, dma_sound_a_timer_select, this->value);
+    GENERATE_GET_SET_FUNC(11, dma_sound_a_reset_fifo, this->value);
+    GENERATE_GET_SET_FUNC(12, dma_sound_b_enable_right, this->value);
+    GENERATE_GET_SET_FUNC(13, dma_sound_b_enable_left, this->value);
+    GENERATE_GET_SET_FUNC(14, dma_sound_b_timer_select, this->value);
+    GENERATE_GET_SET_FUNC(15, dma_sound_b_reset_fifo, this->value);
+};
+
+struct SOUNDCNT_X {
+    u32 value : 8;
+
+    [[nodiscard]]
+    constexpr auto read() const noexcept {
+        return this->value & 0b1100'0000'1000'1111;
+    }
+
+    constexpr void write(const u32 v) noexcept {
+        this->value = v & 0b0000'0000'1000'0000;
+    }
+
+    GENERATE_GET_SET_FUNC(0, sound_flag1, this->value);
+    GENERATE_GET_SET_FUNC(1, sound_flag2, this->value);
+    GENERATE_GET_SET_FUNC(2, sound_flag3, this->value);
+    GENERATE_GET_SET_FUNC(3, sound_flag4, this->value);
+    GENERATE_GET_SET_FUNC(7, psg_master_enable, this->value);
+};
+
+struct SOUNDBIAS {
+    u32 value : 16;
+
+    [[nodiscard]]
+    constexpr auto read() const noexcept {
+        return this->value & 0b1100'0011'1111'1110;
+    }
+
+    constexpr void write(const u32 v) noexcept {
+        this->value = v & 0b1100'0011'1111'1110;
+    }
+
+    GENERATE_GET_SET_RANGE_FUNC(1, 9, bias_level, this->value);
+    GENERATE_GET_SET_RANGE_FUNC(14, 15, amplitude_sampling_cycle, this->value);
+    GENERATE_GET_SET_FUNC(15, initial, this->value);
+};
 
 #undef GENERATE_GET_SET_FUNC
+#undef GENERATE_GET_SET_RANGE_FUNC
 
 } // namespace gba::mem

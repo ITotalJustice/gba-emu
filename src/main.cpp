@@ -272,6 +272,11 @@ int main(int argc, char** argv) {
         }
     }
 #endif // TEST_DECODING
+    const unsigned v = 0b100'0000;
+    const unsigned slice = 0b111;
+    const auto set = bit::set_range<1, 3>(v, slice);
+    std::cout << std::bitset<8>(set) << '\n';
+
     printf("done\n");
     // test(0xA0);
     // std::cout << std::bitset<8>(0x8f) << '\n';
