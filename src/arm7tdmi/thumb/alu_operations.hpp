@@ -5,20 +5,13 @@
 
 namespace arm7tdmi::thumb {
 
-// todo: use builtins (if possible!)
-/*
-__builtin_uadd_overflow
-__builtin_umul_overflow
-__builtin_smul_overflow
-*/
-
 // basically checks if the sign bit of a and b match, but differ from r
 // if bit 31 of a, b = 1 and r = 0, then overflow happened
 // if bit 31 of a, b = 0 and r = 1, then overflow happened
 // if bit 31 of a, b = 1 and r = 1, then overflow did not happen
 // if bit 31 of a = 1, b = 0 and r = X, then overflow did not happen
 constexpr auto calc_v_flag(const u32 a, const u32 b, const u32 r) {
-    return ((a & 0x80000000) == (b & 0x80000000)) && ((a & 0x80000000) != (r & 0x80000000));
+    return (bit::is_set<31>(a) == bit::is_set<31>(b)) && (bit::is_set<31>(a) != bit::is_set<31>(r));
 }
 
 enum class flags_cond {
@@ -246,7 +239,7 @@ constexpr auto instruction_neg(arm7tdmi& arm, const u8 rs, const u8 rd) {
         calc_v_flag(arm.registers[rd], arm.registers[rs], result)
     );
     
-    arm.registers[rd] = result & 0xFF'FF'FF'FFU;
+    arm.registers[rd] = result;
 }
 
 constexpr auto instruction_cmp(arm7tdmi& arm, const u8 rs, const u8 rd) {
@@ -372,40 +365,6 @@ constexpr auto instruction_move_shifted_reg(arm7tdmi& arm, const u8 offset5, con
             arm, arm.registers[rs], offset5, rd
         );
     }
-}
-
-constexpr auto test_and() {
-    constexpr auto func = []() {
-        constexpr auto rs = 0;
-        constexpr auto rd = 5;
-
-        arm7tdmi arm{};
-        arm.registers[rs] = 0x31;
-        arm.registers[rd] = 0xFF;
-
-        instruction_and(arm, rs, rd);
-
-        return arm.registers[rd] == 0x31;
-    };
-
-    static_assert(func());
-}
-
-constexpr auto test_asr() {
-    constexpr auto func = []() {
-        constexpr auto rs = 0;
-        constexpr auto rd = 5;
-
-        arm7tdmi arm{};
-        arm.registers[rs] = 258; // same as 2 (258 & 0xFF == 2)
-        arm.registers[rd] = 0b1000'1111'1111'1111'1111'1111'1111'1100;
-
-        instruction_asr(arm, rs, rd);
-
-        return arm.registers[rd] == 0b1110'0011'1111'1111'1111'1111'1111'1111;
-    };
-
-    static_assert(func());
 }
 
 } // namespace arm7tdmi::thumb

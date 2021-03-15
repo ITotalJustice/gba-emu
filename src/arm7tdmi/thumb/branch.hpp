@@ -43,7 +43,7 @@ constexpr auto instruction_bl(arm7tdmi& arm, const u16 offset) {
         const auto shifted_offset = static_cast<u32>(offset) << 1;
         
         arm.set_pc(arm.get_lr() + shifted_offset);
-        arm.set_lr(next_addr | 1); // bit-0 is set
+        arm.set_lr(bit::set<0>(next_addr, true)); // bit-0 is set
     }
 }
 

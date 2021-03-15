@@ -72,8 +72,7 @@ constexpr auto instruction_push(arm7tdmi& arm, const u32 rlist) {
         const auto addr = rlist_callback<rlist_type::store>(
             arm, 
             arm.get_sp(),
-            // set for the LR (14) reg to be stored
-            rlist | 0b0100'0000'0000'0000
+            bit::set<14>(rlist, true) // set for the LR (14) reg to be stored
         );
         
         arm.set_sp(addr);
@@ -81,7 +80,7 @@ constexpr auto instruction_push(arm7tdmi& arm, const u32 rlist) {
 }
 
 template <push_pop_type type>
-constexpr auto instruction_pop(arm7tdmi& arm, const u8 rlist) {  
+constexpr auto instruction_pop(arm7tdmi& arm, const u32 rlist) {  
     if constexpr(type == push_pop_type::lr_0) {
         // edge case!
         if (rlist == 0) {
@@ -98,8 +97,7 @@ constexpr auto instruction_pop(arm7tdmi& arm, const u8 rlist) {
         const auto addr = rlist_callback<rlist_type::load>(
             arm,
             arm.get_sp(),
-            // set for the PC (15) reg to be restored
-            rlist | 0b1000'0000'0000'0000
+            bit::set<15>(rlist, true) // set for the PC (15) reg to be restored
         );
         arm.set_sp(addr);
         // TODO: does this adjust the PC after to ensure it is

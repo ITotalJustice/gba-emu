@@ -117,7 +117,7 @@ struct MMIO {
     // as an index rather than a huge jump table
     template <typename T> [[nodiscard]]
     constexpr auto read(const u32 addr) -> T {
-        switch ((addr >> 8) & 0xFF'FF'FF) {
+        switch (bit::get_range<8, 31>(addr)) {
         // General Internal Memory
             case 0x000000 ... 0x00003F:   // BIOS - System ROM         (16 KBytes)
                 break;
@@ -170,7 +170,7 @@ struct MMIO {
 
     template <typename T>
     constexpr auto write(const u32 addr, const T v) -> void {
-        switch ((addr >> 8) & 0xFF'FF'FF) {
+        switch (bit::get_range<8, 31>(addr)) {
         // General Internal Memory
             case 0x000000 ... 0x00003F:   // BIOS - System ROM         (16 KBytes)
                 break;
@@ -225,7 +225,7 @@ struct MMIO {
 
     template <typename T> [[nodiscard]]
     constexpr auto read_io(const u32 addr) -> T {
-        switch (addr & 0x7FF) {
+        switch (bit::get_range<0, 11>(addr)) {
         // LCD I/O Registers
             case 0x000:  // 2    R/W  DISPCNT   LCD Control
                 return this->dispcnt.read();
@@ -500,7 +500,7 @@ struct MMIO {
 
     template <typename T>
     constexpr auto write_io(const u32 addr, const T v) -> void {
-        switch (addr & 0x7FF) {
+        switch (bit::get_range<0, 11>(addr)) {
         // LCD I/O Registers
             case 0x000:  // 2    R/W  DISPCNT   LCD Control
                 this->dispcnt.write(v);
