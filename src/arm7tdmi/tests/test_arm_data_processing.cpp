@@ -1,6 +1,6 @@
 #include "../arm/data_processing.hpp"
 
-namespace arm7tdmi::arm::data_processing {
+namespace arm7tdmi::arm {
 
 static_assert(
     branch_offset(0b1100'1111'1111'1111'1111'1111) == (s32)0b1111'1111'0011'1111'1111'1111'1111'1100 &&
@@ -13,13 +13,16 @@ constexpr void alu_logical_test() {
             u32 cpsr, op1, op2;
             bool carry;
         } value;
-        Test result;
+        struct Result {
+            u32 result, cpsr;
+        } result;
     };
 
-    constexpr auto func_test = [](const auto func, auto array) {
-        for (const auto [value, result] : array) {
-            const auto r = func(value.cpsr, value.op1, value.op2, value.carry);
-            if (r.result != result.result || r.cpsr != result.cpsr) {
+    constexpr auto func_test = [](const auto func, const auto arr) -> bool {
+        arm7tdmi arm{};
+        for (const auto [value, result] : arr) {
+            func(arm, value.op1, value.op2, 0, value.carry);
+            if (arm.registers[0] != result.result || arm.get_cpsr() != result.cpsr) {
                 return false;
             }
         }
@@ -46,9 +49,9 @@ constexpr void alu_logical_test() {
     }};
 
     static_assert(
-        func_test(arm_and2<flags_cond::modify>, args),
+        func_test(instruction_and<flags_cond::modify>, args),
         "failed to pass arm AND test!"
     );
 }
 
-} // namespace arm7tdmi::arm::data_processing
+} // namespace arm7tdmi::arm
