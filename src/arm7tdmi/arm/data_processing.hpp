@@ -17,15 +17,16 @@ constexpr void instruction_bx(arm7tdmi& arm, const u8 rn) {
 
     const auto new_pc = arm.registers[rn];
     const auto new_cpsr = switch_state(
-        arm.registers[16],
+        arm.get_cpsr(),
         static_cast<state>(bit::is_set<0>(new_pc))
     );
 
-    arm.registers[15] = new_pc;
-    arm.registers[16] = new_cpsr;
+    arm.set_pc(new_pc);
+    arm.set_cpsr(new_cpsr);
 }
 
-constexpr s32 branch_offset(const u32 offset) {
+[[nodiscard]]
+constexpr auto branch_offset(const u32 offset) {
     return static_cast<s32>(bit::sign_extend<24>(offset) << 2);
 }
 
@@ -73,7 +74,8 @@ constexpr void alu_flags_logical(arm7tdmi& arm, const u32 result, const u8 rd, c
 /*
 .5.4 Writing to R15
     When Rd is a register other than R15, the condition code flags in the CPSR may be 
-    updated from the ALU flags as described above. 
+    updated from the ALU flags as described above.
+
     When Rd is R15 and the S flag in the instruction is not set the result of the operation is 
     placed in R15 and the CPSR is unaffected.
 
@@ -144,6 +146,98 @@ template <flags_cond flag>
 constexpr void instruction_mvn(arm7tdmi& arm, [[maybe_unused]] const u32 op1, const u32 op2, const u8 rd, const bool barrel_carry) {
     const auto result = ~op2;
     alu_flags_logical<flag>(arm, result, rd, barrel_carry);
+}
+
+
+[[nodiscard]]
+constexpr auto calc_v_flag(const u32 a, const u32 b, const u32 r) {
+    return (bit::is_set<31>(a) == bit::is_set<31>(b)) && (bit::is_set<31>(a) != bit::is_set<31>(r));
+}
+
+// arithmetic (from thumb)
+template <flags_cond cond, save_result save = save_result::yes>
+constexpr void instruction_add_generic(arm7tdmi& arm, const u32 op1, const u32 op2, const u8 rd) {
+    const u64 result = op1 + op2;
+
+    if constexpr(cond == flags_cond::modify) {
+        arm.cpsr.set_flags<ftest::nzcv>(
+            bit::is_set<31>(result),
+            (result & 0xFF'FF'FF'FFU) == 0,
+            result > 0xFF'FF'FF'FFU,
+            calc_v_flag(op1, op2, result)
+        );
+    }
+    
+    if constexpr(save == save_result::yes) {
+        arm.registers[rd] = static_cast<u32>(result);
+    }
+}
+
+template <flags_cond cond, save_result save = save_result::yes>
+constexpr void instruction_sub_generic(arm7tdmi& arm, const u32 op1, const u32 op2, const u8 rd) {
+    const auto result = op1 - op2;
+
+    if constexpr(cond == flags_cond::modify) {
+        arm.cpsr.set_flags<ftest::nzcv>(
+            bit::is_set<31>(result),
+            result == 0,
+            op1 < op2,
+            calc_v_flag(op1, op2, result)
+        );
+    }
+    
+    if constexpr(save == save_result::yes) {
+        arm.registers[rd] = static_cast<u32>(result);
+    }
+}
+
+template <flags_cond cond>
+constexpr void instruction_adc(arm7tdmi& arm, const u32 op1, const u32 op2, const u8 rd) {
+    instruction_add_generic<cond>(arm,
+        op1, op2 + arm.cpsr.get_flag<flags::C>(), rd
+    );
+}
+
+template <flags_cond cond>
+constexpr void instruction_sbc(arm7tdmi& arm, const u32 op1, const u32 op2, const u8 rd) {
+    instruction_sub_generic<cond>(arm,
+        op1, op2 + arm.cpsr.get_flag<flags::C>(), rd
+    );
+}
+
+template <flags_cond cond>
+constexpr void instruction_sub(arm7tdmi& arm, const u32 op1, const u32 op2, const u8 rd) {
+    instruction_sub_generic<cond>(arm,
+        op1, op2, rd
+    );
+}
+
+template <flags_cond cond>
+constexpr void instruction_rsb(arm7tdmi& arm, const u32 op1, const u32 op2, const u8 rd) {
+    instruction_sub_generic<cond>(arm,
+        op2, op1, rd
+    );
+}
+
+template <flags_cond cond>
+constexpr void instruction_rsc(arm7tdmi& arm, const u32 op1, const u32 op2, const u8 rd) {
+    instruction_sub_generic<cond>(arm,
+        op2, op1 + arm.cpsr.get_flag<flags::C>(), rd
+    );
+}
+
+template <flags_cond cond>
+constexpr void instruction_cmn(arm7tdmi& arm, const u32 op1, const u32 op2, const u8 rd) {
+    instruction_add_generic<cond, save_result::no>(arm,
+        op1, op2, rd
+    );
+}
+
+template <flags_cond cond>
+constexpr void instruction_cmp(arm7tdmi& arm, const u32 op1, const u32 op2, const u8 rd) {
+    instruction_sub_generic<cond, save_result::no>(arm,
+        op1, op2, rd
+    );
 }
 
 } // arm7tdmi::arm

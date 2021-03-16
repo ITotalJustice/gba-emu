@@ -10,6 +10,7 @@ namespace arm7tdmi::thumb {
 // if bit 31 of a, b = 0 and r = 1, then overflow happened
 // if bit 31 of a, b = 1 and r = 1, then overflow did not happen
 // if bit 31 of a = 1, b = 0 and r = X, then overflow did not happen
+[[nodiscard]]
 constexpr auto calc_v_flag(const u32 a, const u32 b, const u32 r) {
     return (bit::is_set<31>(a) == bit::is_set<31>(b)) && (bit::is_set<31>(a) != bit::is_set<31>(r));
 }

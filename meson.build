@@ -21,7 +21,6 @@ source = files([
     'src/arm7tdmi/tests/test_common.cpp',
     'src/arm7tdmi/tests/test_register_banking.cpp',
     'src/arm7tdmi/tests/test_thumb_load_store.cpp',
-    'src/arm7tdmi/tests/test_thumb_branch.cpp',
     'src/arm7tdmi/tests/test_thumb_alu.cpp',
     'src/arm7tdmi/tests/test_thumb_push_pop.cpp',
     'src/arm7tdmi/tests/test_thumb_decode.cpp',

@@ -58,3 +58,6 @@ unused/
 extra/gen_arm_data_process_table/test.h
 extra/gen_arm_data_process_table/test_lut.hpp
 roms/
+
+# not yet used
+src/mem.hpp
