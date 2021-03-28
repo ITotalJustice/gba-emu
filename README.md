@@ -1,6 +1,6 @@
 # gba-emu
 
-starting to write a gba emulator
+NEW REPO! ALL WORK WILL BE CONTINUED THERE <https://github.com/ITotalJustice/TotalGBA>
 
 ----
 
